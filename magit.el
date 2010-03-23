@@ -437,6 +437,7 @@ Many Magit faces inherit from this one by default."
     (define-key map (kbd "v") 'magit-revert-item)
     (define-key map (kbd "b") 'magit-key-mode-popup-branching)
     (define-key map (kbd "m") 'magit-key-mode-popup-merging)
+    (define-key map (kbd "M") 'magit-key-mode-popup-submodule)
     (define-key map (kbd "k") 'magit-discard-item)
     (define-key map (kbd "e") 'magit-interactive-resolve-item)
     (define-key map (kbd "C") 'magit-add-log)
@@ -1842,6 +1843,10 @@ FUNC should leave point at the end of the modified region"
     ["Push" magit-push t]
     ["Pull" magit-pull t]
     ["Remote update" magit-remote-update t]
+    ("Submodule"
+     ["Submodule update" magit-submodule-update t]
+     ["Submodule init" magit-submodule-init t]
+     ["Submodule sync" magit-submodule-sync t])
     "---"
     ("Extensions")
     "---"
@@ -4417,6 +4422,26 @@ With prefix force the removal even it it hasn't been merged."
             (magit-list-buffers))
     'string=)))
 
-(provide 'magit)
+(defun magit-submodule-update (&optional init)
+  "Update the submodule of the current git repository
 
+With a prefix arg, do a submodule update --init"
+  (interactive "P")
+  (let ((default-directory (magit-get-top-dir default-directory)))
+    (apply #'magit-run-git-async "submodule" "update" (if init '("--init") ()))))
+
+(defun magit-submodule-init ()
+  "Initialize the submodules"
+  (interactive)
+  (let ((default-directory (magit-get-top-dir default-directory)))
+    (magit-run-git-async "submodule" "init")))
+
+(defun magit-submodule-sync ()
+  "Synchronizes submodules' remote URL configuration"
+  (interactive)
+  (let ((default-directory (magit-get-top-dir default-directory)))
+    (magit-run-git-async "submodule" "sync")))
+
+
+(provide 'magit)
 ;;; magit.el ends here
