@@ -1418,6 +1418,9 @@ FUNC should leave point at the end of the modified region"
     (define-key map (kbd "E") 'magit-interactive-rebase)
     (define-key map (kbd "V") 'magit-show-branches)
     (define-key map (kbd "q") 'quit-window)
+    (define-key map (kbd "C-c C-m u") 'magit-submodule-update)
+    (define-key map (kbd "C-c C-m s") 'magit-submodule-sync)
+    (define-key map (kbd "C-c C-m i") 'magit-submodule-init)
     map))
 
 (easy-menu-define magit-mode-menu magit-mode-map
@@ -1475,6 +1478,10 @@ FUNC should leave point at the end of the modified region"
     ["Push" magit-push t]
     ["Pull" magit-pull t]
     ["Remote update" magit-remote-update t]
+    ("Submodule"
+     ["Submodule update" magit-submodule-update t]
+     ["Submodule init" magit-submodule-init t]
+     ["Submodule sync" magit-submodule-sync t])
     "---"
     ["Display Git output" magit-display-process t]
     ["Quit Magit" quit-window t]))
@@ -3723,6 +3730,27 @@ With prefix force the removal even it it hasn't been merged."
   (magit-section-action (item info "resolv")
     ((diff)
      (magit-interactive-resolve (cadr info)))))
+
+(defun magit-submodule-update (&optional init)
+  "Update the submodule of the current git repository
+
+With a prefix arg, do a submodule update --init"
+  (interactive "P")
+  (let ((default-directory (magit-get-top-dir default-directory)))
+    (apply #'magit-run-git-async "submodule" "update" (if init '("--init") ()))))
+
+(defun magit-submodule-init ()
+  "Initialize the submodules"
+  (interactive)
+  (let ((default-directory (magit-get-top-dir default-directory)))
+    (magit-run-git-async "submodule" "init")))
+
+(defun magit-submodule-sync ()
+  "Synchronizes submodules' remote URL configuration"
+  (interactive)
+  (let ((default-directory (magit-get-top-dir default-directory)))
+    (magit-run-git-async "submodule" "sync")))
+
 
 (provide 'magit)
 
