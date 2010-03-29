@@ -3358,14 +3358,15 @@ Prefix arg means justify as well."
       (magit-need-refresh))))
 
 (defun magit-refresh-wazzup-buffer (head all)
+  (unless head (setq head "HEAD"))
   (magit-create-buffer-sections
     (magit-with-section 'wazzupbuf nil
       (insert (format "Wazzup, %s\n\n" head))
       (let* ((excluded (magit-file-lines ".git/info/wazzup-exclude"))
 	     (all-branches (magit-list-interesting-refs))
 	     (branches (if all all-branches
-			 (remove-if (lambda (b) (member (cdr b) excluded))
-				    all-branches)))
+			   (remove-if (lambda (b) (member (cdr b) excluded))
+				      all-branches)))
 	     (reported (make-hash-table :test #'equal)))
 	(dolist (branch branches)
 	  (let* ((name (car branch))
@@ -3387,7 +3388,7 @@ Prefix arg means justify as well."
 				 n name
 				 (if (member ref excluded)
 				     " (normally ignored)"
-				   ""))
+				     ""))
 			 'magit-wash-log
 			 "log"
 			 (format "--max-count=%s" magit-log-cutoff-length)
@@ -3399,11 +3400,12 @@ Prefix arg means justify as well."
 
 (defun magit-wazzup (&optional all)
   (interactive "P")
-  (let* ((topdir (magit-get-top-dir default-directory)))
+  (let ((topdir (magit-get-top-dir default-directory))
+	(current-branch (magit-get-current-branch)))
     (switch-to-buffer "*magit-wazzup*")
     (magit-mode-init topdir 'wazzup
 		     #'magit-refresh-wazzup-buffer
-		     (magit-get-current-branch) all)))
+		     current-branch all)))
 
 ;;; Miscellaneous
 
