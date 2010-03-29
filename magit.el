@@ -639,7 +639,7 @@ Sections create into BODY will be child of the new section.
 BODY must leave point at the end of the created section.
 
 If TYPE is nil, the section won't be highlighted."
-  (declare (indent 2))
+  (declare (indent 2) (debug (sexp sexp &rest form)))
   (let ((s (gensym)))
     `(let* ((,s (magit-new-section ,title ,type))
 	    (magit-top-section ,s))
@@ -660,7 +660,7 @@ If TYPE is nil, the section won't be highlighted."
 
 (defmacro magit-create-buffer-sections (&rest body)
   "Empty current buffer of text and magit's section, and then evaluate BODY."
-  (declare (indent 0))
+  (declare (indent 0) (debug (&rest form)))
   `(let ((inhibit-read-only t))
      (erase-buffer)
      (let ((magit-old-top-section magit-top-section))
@@ -2228,6 +2228,11 @@ must return a string which will represent the log line.")
     (magit-with-section 'status nil
       (let* ((branch (magit-get-current-branch))
 	     (remote (and branch (magit-get "branch" branch "remote")))
+	     (remote-refs (when remote
+			      (magit-get "branch" branch "merge")))
+	     (remote-branch (when (and remote-refs
+				       (string-match "^refs/heads/\\(.*\\)$" remote-refs))
+			      (match-string 1 remote-refs)))
 	     (svn-info (magit-get-svn-ref-info))
 	     (remote-string (magit-remote-string remote svn-info))
 	     (head (magit-git-string
@@ -2258,7 +2263,7 @@ must return a string which will represent the log line.")
 	(magit-insert-pending-changes)
 	(magit-insert-pending-commits)
 	(when remote
-	  (magit-insert-unpulled-commits remote branch))
+	  (magit-insert-unpulled-commits remote (or remote-branch branch)))
 	(when svn-info
 	  (magit-insert-unpulled-svn-commits t))
 	(let ((staged (or no-commit (magit-anything-staged-p))))
@@ -2267,7 +2272,7 @@ must return a string which will represent the log line.")
 	  (if staged
 	      (magit-insert-staged-changes no-commit)))
 	(when remote
-	  (magit-insert-unpushed-commits remote branch))
+	  (magit-insert-unpushed-commits remote (or remote-branch branch)))
 	(when svn-info
 	  (magit-insert-unpushed-svn-commits t))))))
 
