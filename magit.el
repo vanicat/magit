@@ -2475,9 +2475,10 @@ must return a string which will represent the log line.")
 ;;; Merging
 
 (defun magit-guess-branch ()
-  (let ((sec (magit-current-section)))
-    (if (and sec (eq (magit-section-type sec) 'wazzup))
-	(magit-section-info sec))))
+  (magit-section-case (item info)
+    ((wazzup commit)
+     (magit-section-info (magit-section-parent item)))
+    ((wazzup) info)))
 
 (defun magit-manual-merge (rev)
   "Merge (without committing) REV.
