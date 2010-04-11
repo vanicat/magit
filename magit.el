@@ -575,7 +575,13 @@ Many Magit faces inherit from this one by default."
       (format "%s at %s" things (magit-rev-describe (car range))))))
 
 (defun magit-default-rev ()
-  (magit-name-rev (magit-commit-at-point t)))
+  (or (magit-name-rev (magit-commit-at-point t))
+      (let ((branch (magit-guess-branch)))
+	(if branch
+	    (if (string-match "^refs/\\(.*\\)" branch)
+		(match-string 1 branch)
+		branch)))))
+
 
 ;;; Sections
 
@@ -2482,7 +2488,7 @@ must return a string which will represent the log line.")
 (defun magit-read-create-branch-args ()
   (let* ((cur-branch (magit-get-current-branch))
 	 (branch (read-string "Create branch: "))
-	 (parent (magit-read-rev "Parent" cur-branch)))
+	 (parent (magit-read-rev "Parent" (or (magit-default-rev) cur-branch))))
     (list branch parent)))
 
 (defun magit-create-branch (branch parent)
@@ -2499,9 +2505,10 @@ must return a string which will represent the log line.")
 ;;; Merging
 
 (defun magit-guess-branch ()
-  (let ((sec (magit-current-section)))
-    (if (and sec (eq (magit-section-type sec) 'wazzup))
-	(magit-section-info sec))))
+  (magit-section-case (item info)
+    ((wazzup commit)
+     (magit-section-info (magit-section-parent item)))
+    ((wazzup) info)))
 
 (defun magit-manual-merge (rev)
   "Merge (without committing) REV.
@@ -2546,7 +2553,7 @@ Given a prefix-arg then the merge will be squashed."
   (interactive)
   (let ((info (magit-rebase-info)))
     (if (not info)
-	(let ((rev (magit-read-rev "Rebase to")))
+	(let ((rev (magit-read-rev "Rebase to" (magit-guess-branch))))
 	  (if rev
 	      (magit-run-git "rebase" (magit-rev-to-git rev))))
       (let ((cursor-in-echo-area t)
@@ -3416,7 +3423,7 @@ Prefix arg means justify as well."
   :keymap magit-reflog-mode-map)
 
 (defun magit-reflog (head)
-  (interactive (list (magit-read-rev "Reflog of" "HEAD")))
+  (interactive (list (magit-read-rev "Reflog of" (or (magit-guess-branch) "HEAD"))))
   (if head
       (let* ((topdir (magit-get-top-dir default-directory))
 	     (args (magit-rev-to-git head)))
@@ -3458,7 +3465,7 @@ Prefix arg means justify as well."
 	  (magit-diff-mode t)))))
 
 (defun magit-diff-working-tree (rev)
-  (interactive (list (magit-read-rev "Diff with (default HEAD)")))
+  (interactive (list (magit-read-rev "Diff with" (magit-default-rev))))
   (magit-diff (or rev "HEAD")))
 
 (defun magit-diff-with-mark ()
