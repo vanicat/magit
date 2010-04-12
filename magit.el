@@ -2160,6 +2160,23 @@ must return a string which will represent the log line.")
 	  (when message
 	    (propertize message 'face 'magit-log-message)))))
 
+(defvar magit-log-count ()
+  "internal var used to count the number of log actualy added in a buffer")
+
+(defmacro magit-create-log-buffer-sections (&rest body)
+  "Empty current buffer of text and magit's section, and then evaluate body.
+
+if the number of logs inserted in the buffer is magit-log-cutoff-length
+insert a line to tell how to insert more of them"
+  (declare (indent 0))
+  `(let ((magit-log-count 0) (inhibit-read-only t))
+     (magit-create-buffer-sections
+       ,@(body)
+       (if (= magit-log-count magit-log-cutoff-length)
+	   (magit-with-section "longer"  'longer
+	     (insert "type \"l\" to show more logs\n"))))))
+
+
 (defun magit-wash-log-line ()
   (beginning-of-line)
   (let ((line-re magit-log-oneline-re))
@@ -2178,6 +2195,7 @@ must return a string which will represent the log line.")
         (goto-char (point-at-bol))
         (if sha1
             (magit-with-section sha1 'commit
+              (when magit-log-count (setq magit-log-count (1+ magit-log-count)))
               (magit-set-section-info sha1)
               (forward-line))
           (forward-line))))
@@ -3364,11 +3382,10 @@ With a non numeric prefix ARG, show all entries"
   (magit-refresh))
 
 
-
 (defun magit-refresh-log-buffer (range style args)
   (magit-configure-have-graph)
   (magit-configure-have-decorate)
-  (magit-create-buffer-sections
+  (magit-create-log-buffer-sections
     (apply #'magit-git-section nil
 	   (magit-rev-range-describe range "Commits")
 	   'magit-wash-log
@@ -3425,7 +3442,7 @@ With a non numeric prefix ARG, show all entries"
 ;;; Reflog
 
 (defun magit-refresh-reflog-buffer (head args)
-  (magit-create-buffer-sections
+  (magit-create-log-buffer-sections
     (magit-git-section 'reflog
 		       (format "Local history of head %s" head)
 		       'magit-wash-log
@@ -3671,7 +3688,9 @@ With a non numeric prefix ARG, show all entries"
      (magit-show-stash info)
      (pop-to-buffer "*magit-stash*"))
     ((topic)
-     (magit-checkout info))))
+     (magit-checkout info))
+    ((longer)
+     (magit-log-show-more-entries ()))))
 
 (defun magit-show-item-or-scroll-up ()
   (interactive)
