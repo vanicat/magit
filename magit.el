@@ -1473,6 +1473,7 @@ FUNC should leave point at the end of the modified region"
     (define-key map (kbd "m") 'magit-manual-merge)
     (define-key map (kbd "M") 'magit-automatic-merge)
     (define-key map (kbd "x") 'magit-reset-head)
+    (define-key map (kbd "l") 'magit-log-show-more-entries)
     map))
 
 (defvar magit-reflog-mode-map
@@ -3345,6 +3346,24 @@ Prefix arg means justify as well."
   (if (eq magit-have-decorate 'unset)
       (let ((res (magit-git-exit-code "log" "--decorate=full" "--max-count=0")))
 	(setq magit-have-decorate (eq res 0)))))
+
+(defun magit-log-show-more-entries (&optional arg)
+  "Grow the number of log entries shown.
+
+With no prefix optional ARG, show twice as much log entries.
+With a numerical prefix ARG, add this number to the number of shown log entries.
+With a non numeric prefix ARG, show all entries"
+  (interactive "P")
+  (make-local-variable 'magit-log-cutoff-length)
+  (cond
+    ((numberp arg)
+     (setq magit-log-cutoff-length (+ magit-log-cutoff-length added)))
+    (arg
+     (setq magit-log-cutoff-length magit-log-infinite-length))
+    (t (setq magit-log-cutoff-length (* magit-log-cutoff-length 2))))
+  (magit-refresh))
+
+
 
 (defun magit-refresh-log-buffer (range style args)
   (magit-configure-have-graph)
