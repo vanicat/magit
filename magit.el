@@ -121,6 +121,11 @@ Setting this to nil will make it do nothing, setting it to t will arrange things
   :group 'magit
   :type 'integer)
 
+(defcustom magit-log-infinite-length 99999
+  "Number of log used to show as maximum for magit-log-cutoff-length"
+  :group 'magit
+  :type 'integer)
+
 (defcustom magit-process-popup-time -1
   "Popup the process buffer if a command takes longer than this many seconds."
   :group 'magit
@@ -2171,7 +2176,7 @@ insert a line to tell how to insert more of them"
   (declare (indent 0))
   `(let ((magit-log-count 0) (inhibit-read-only t))
      (magit-create-buffer-sections
-       ,@(body)
+       ,@body
        (if (= magit-log-count magit-log-cutoff-length)
 	   (magit-with-section "longer"  'longer
 	     (insert "type \"l\" to show more logs\n"))))))
@@ -3375,7 +3380,7 @@ With a non numeric prefix ARG, show all entries"
   (make-local-variable 'magit-log-cutoff-length)
   (cond
     ((numberp arg)
-     (setq magit-log-cutoff-length (+ magit-log-cutoff-length added)))
+     (setq magit-log-cutoff-length (+ magit-log-cutoff-length arg)))
     (arg
      (setq magit-log-cutoff-length magit-log-infinite-length))
     (t (setq magit-log-cutoff-length (* magit-log-cutoff-length 2))))
