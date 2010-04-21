@@ -269,6 +269,12 @@ Many Magit faces inherit from this one by default."
   (declare (indent 0))
   `(magit-refresh-wrapper (lambda () ,@body)))
 
+;;; Compatibilities
+
+(if (functionp 'start-file-process)
+    (defalias 'magit-start-process 'start-file-process)
+    (defalias 'magit-start-process 'start-process))
+
 ;;; Utilities
 
 (defun magit-use-region-p ()
@@ -1201,7 +1207,7 @@ FUNC should leave point at the end of the modified region"
 	(cond (nowait
 	       (setq magit-process
 		     (let ((process-connection-type nil))
-		       (apply 'start-file-process cmd buf cmd args)))
+		       (apply 'magit-start-process cmd buf cmd args)))
 	       (set-process-sentinel magit-process 'magit-process-sentinel)
 	       (set-process-filter magit-process 'magit-process-filter)
 	       (when input
@@ -1227,7 +1233,7 @@ FUNC should leave point at the end of the modified region"
 	       (with-current-buffer input
 		 (setq default-directory dir)
                  (setq magit-process
-                       (apply 'start-file-process cmd buf cmd args))
+                       (apply 'magit-start-process cmd buf cmd args))
                  (set-process-filter magit-process 'magit-process-filter)
                  (process-send-region magit-process
                                       (point-min) (point-max))
