@@ -287,13 +287,22 @@ Many Magit faces inherit from this one by default."
   (declare (indent 0))
   `(magit-refresh-wrapper (lambda () ,@body)))
 
+(eval-when-compile
+  (when (< emacs-major-version 23)
+    (defvar line-move-visual nil)))
+
 ;;; Compatibilities
 
 (if (functionp 'start-file-process)
     (defalias 'magit-start-process 'start-file-process)
     (defalias 'magit-start-process 'start-process))
 
+
 ;;; Utilities
+
+(defvar magit-submode nil)
+(make-variable-buffer-local 'magit-submode)
+(put 'magit-submode 'permanent-local t)
 
 (defun magit-use-region-p ()
   (if (fboundp 'use-region-p)
@@ -1592,10 +1601,6 @@ FUNC should leave point at the end of the modified region"
 
 (put 'magit-mode 'mode-class 'special)
 
-(defvar magit-submode nil)
-(make-variable-buffer-local 'magit-submode)
-(put 'magit-submode 'permanent-local t)
-
 (defvar magit-refresh-function nil)
 (make-variable-buffer-local 'magit-refresh-function)
 (put 'magit-refresh-function 'permanent-local t)
@@ -2602,9 +2607,9 @@ Given a prefix-arg then the merge will be squashed."
 
 (defun magit-svn-find-rev (rev &optional branch)
   (interactive
-   (list (read-input "SVN revision: ")
+   (list (read-string "SVN revision: ")
          (if current-prefix-arg
-             (read-input "In branch: "))))
+             (read-string "In branch: "))))
   (let* ((sha (apply 'magit-git-string
                      `("svn"
                        "find-rev"
@@ -2865,6 +2870,8 @@ If USE-CACHE is non nil, use the cached information."
         (magit-run* (list magit-topgit-executable "update")
                     nil nil nil t)
       (magit-run-git-async "pull" "-v"))))
+
+(eval-when-compile (require 'pcomplete))
 
 (defun magit-shell-command (command)
   (interactive "sCommand: ")
@@ -3752,9 +3759,12 @@ With a non numeric prefix ARG, show all entries"
      (kill-new info)
      (message "%s" info))))
 
+(eval-when-compile (require 'server))
+
 (defun magit-interactive-rebase ()
   "Start a git rebase -i session, old school-style."
   (interactive)
+  (require 'server)
   (unless (server-running-p)
     (server-start))
   (let* ((section (get-text-property (point) 'magit-section))
@@ -3866,8 +3876,10 @@ With prefix force the removal even it it hasn't been merged."
 (defun magit-show-branches ()
   "Show all of the current branches in other-window."
   (interactive)
-  (unless (string= (buffer-name) magit-branches-buffer-name)
-    (switch-to-buffer-other-window magit-branches-buffer-name))
+  (unless (eq major-mode 'magit-show-branches-mode)
+    (let ((topdir (magit-get-top-dir default-directory)))
+      (switch-to-buffer-other-window magit-branches-buffer-name)
+      (setq default-directory topdir)))
   (let ((inhibit-read-only t)
         (branches (mapcar 'magit--branch-view-details
                           (magit-git-lines "branch" "-va"))))
@@ -3895,7 +3907,10 @@ With prefix force the removal even it it hasn't been merged."
 (defvar magit-ediff-file)
 (defvar magit-ediff-windows)
 
+(eval-when-compile (require 'ediff))
+
 (defun magit-interactive-resolve (file)
+  (require 'ediff)
   (let ((merge-status (magit-git-string "ls-files" "-u" "--" file))
 	(base-buffer (generate-new-buffer (concat file ".base")))
 	(our-buffer (generate-new-buffer (concat file ".current")))
