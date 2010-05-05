@@ -1744,12 +1744,12 @@ Please see the manual for a complete description of Magit.
 (defun magit-string-has-prefix-p (string prefix)
   (eq (compare-strings string nil (length prefix) prefix nil nil) t))
 
-(defun magit-revert-buffers (dir)
+(defun magit-revert-buffers (dir &optional ignore-modtime)
   (dolist (buffer (buffer-list))
     (when (and buffer
 	       (buffer-file-name buffer)
 	       (magit-string-has-prefix-p (buffer-file-name buffer) dir)
-	       (not (verify-visited-file-modtime buffer))
+	       (or ignore-modtime (not (verify-visited-file-modtime buffer)))
 	       (not (buffer-modified-p buffer)))
       (with-current-buffer buffer
 	(ignore-errors
@@ -2219,7 +2219,7 @@ insert a line to tell how to insert more of them"
        ,@body
        (if (= magit-log-count magit-log-cutoff-length)
 	   (magit-with-section "longer"  'longer
-	     (insert "type \"l\" to show more logs\n"))))))
+	     (insert "type \"e\" to show more logs\n"))))))
 
 
 (defun magit-wash-log-line ()
@@ -3122,6 +3122,7 @@ Prefix arg means justify as well."
     (bury-buffer)
     (when (file-exists-p ".git/MERGE_MSG")
       (delete-file ".git/MERGE_MSG"))
+    (magit-revert-buffers default-directory t)
     (when magit-pre-log-edit-window-configuration
       (set-window-configuration magit-pre-log-edit-window-configuration)
       (setq magit-pre-log-edit-window-configuration nil))))
