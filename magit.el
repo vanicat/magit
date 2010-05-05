@@ -6,6 +6,14 @@
 ;; Copyright (C) 2008  Marcin Bachry
 ;; Copyright (C) 2009  Alexey Voinov
 ;; Copyright (C) 2009  John Wiegley
+;; Copyright (C) 2010  Phil Jackson
+;; Copyright (C) 2010  Roger Crew
+;; Copyright (C) 2010  Rémi Vanicat
+;; Copyright (C) 2010  Moritz Bunkus
+;; Copyright (C) 2010  Ben Walton
+;; Copyright (C) 2010  Hannu Koivisto
+;; Copyright (C) 2010  Pavel Holejsovsky
+
 ;;
 ;; Magit is free software; you can redistribute it and/or modify it
 ;; under the terms of the GNU General Public License as published by
@@ -55,8 +63,8 @@
 ;; - Amending commits other than HEAD.
 ;; - 'Subsetting', only looking at a subset of all files.
 
-(require 'cl)
-(require 'parse-time)
+(eval-when-compile (require 'cl))
+(eval-when-compile (require 'parse-time))
 (require 'log-edit)
 (require 'easymenu)
 (require 'diff-mode)
@@ -399,7 +407,7 @@ Many Magit faces inherit from this one by default."
 		 (let ((sub (magit-remove-conflicts
 			     (mapcar (lambda (entry)
 				       (let ((dir (directory-file-name
-						   (subseq entry 0 (- (length key))))))
+						   (substring entry 0 (- (length key))))))
 					 (cons (concat (file-name-nondirectory dir) "/" key)
 					       entry)))
 				     value))))
@@ -665,8 +673,8 @@ Sections create into BODY will be child of the new section.
 BODY must leave point at the end of the created section.
 
 If TYPE is nil, the section won't be highlighted."
-  (declare (indent 2) (debug (sexp sexp &rest form)))
-  (let ((s (gensym)))
+  (declare (indent 2))
+  (let ((s (make-symbol "*section*")))
     `(let* ((,s (magit-new-section ,title ,type))
 	    (magit-top-section ,s))
        (setf (magit-section-beginning ,s) (point))
@@ -711,12 +719,12 @@ If TYPE is nil, the section won't be highlighted."
   "Find in subsection of section TOP the section at the path PATH."
   (if (null path)
       top
-    (let ((sec (find-if (lambda (s) (equal (car path)
-					   (magit-section-title s)))
-			(magit-section-children top))))
-      (if sec
-	  (magit-find-section (cdr path) sec)
-	nil))))
+    (let ((secs (magit-section-children top)))
+      (while (and secs (not (equal (car path) 
+				   (magit-section-title (car secs)))))
+	(setq secs (cdr secs)))
+      (and (car secs) 
+	   (magit-find-section (cdr path) (car secs))))))
 
 (defun magit-section-path (section)
   "Return the path of SECTION."
@@ -926,7 +934,10 @@ Default value for TOP is `magit-top-section'"
 (defun magit-section-any-hidden (section)
   "Return true if SECTION or any of its children is hidden."
   (or (magit-section-hidden section)
-      (some #'magit-section-any-hidden (magit-section-children section))))
+      (let ((kids (magit-section-children section)))
+	(while (and kids (not (magit-section-any-hidden (car kids))))
+	  (setq kids (cdr kids)))
+	kids)))
 
 (defun magit-section-collapse (section)
   "Show SECTION and hide all its children."
@@ -1150,8 +1161,8 @@ where SECTION-TYPE describe section where BODY will be run."
   (declare (indent 1))
   (let ((section (car head))
 	(info (cadr head))
-	(type (gensym))
-	(context (gensym))
+	(type (make-symbol "*type*"))
+	(context (make-symbol "*context*"))
 	(opname (caddr head)))
     `(let* ((,section (magit-current-section))
 	    (,info (magit-section-info ,section))
@@ -1319,8 +1330,10 @@ FUNC should leave point at the end of the modified region"
       (goto-char (process-mark proc))
       ;; Find last ^M in string.  If one was found, ignore everything
       ;; before it and delete the current line.
-      (let ((ret-pos (position ?\r string :from-end t)))
-	(cond (ret-pos
+      (let ((ret-pos (length string)))
+	(while (and (>= (setq ret-pos (1- ret-pos)) 0)
+		    (/= ?\r (aref string ret-pos))))
+	(cond ((>= ret-pos 0)
 	       (goto-char (line-beginning-position))
 	       (delete-region (point) (line-end-position))
 	       (insert (substring string (+ ret-pos 1))))
@@ -2218,10 +2231,14 @@ insert a line to tell how to insert more of them"
             (sha1 (match-string 2))
             (msg (match-string 4))
             (refs (when (match-string 3)
-                    (remove-if (lambda (s)
-                                 (or (string= s "tag:")
-                                     (string= s "HEAD"))) ; as of 1.6.6
-                               (split-string (match-string 3) "[(), ]" t)))))
+		    (delq nil
+			  (mapcar 
+			   (lambda (s)
+			     (and (not
+				   (or (string= s "tag:")
+				       (string= s "HEAD"))) ; as of 1.6.6
+				  s))
+			   (split-string (match-string 3) "[(), ]" t))))))
         (delete-region (point-at-bol) (point-at-eol))
         (insert (funcall magit-present-log-line-function chart sha1 refs msg))
         (goto-char (point-at-bol))
@@ -2513,7 +2530,7 @@ insert a line to tell how to insert more of them"
 (defun magit-stage-all (&optional also-untracked-p)
   "Add all remaining changes in tracked files to staging area.
 With prefix argument, add remaining untracked files as well.
-('git add -u .' or 'git add .', respectively)."
+\('git add -u .' or 'git add .', respectively)."
   (interactive "P")
   (if also-untracked-p
       (magit-run-git "add" ".")
@@ -2521,7 +2538,7 @@ With prefix argument, add remaining untracked files as well.
 
 (defun magit-unstage-all ()
   "Remove all changes from staging area.
-('git reset --mixed HEAD')."
+\('git reset --mixed HEAD')."
   (interactive)
   (magit-run-git "reset" "HEAD"))
 
@@ -2542,7 +2559,7 @@ With prefix argument, add remaining untracked files as well.
   "Switch 'HEAD' to REVISION and update working tree.
 Fails if working tree or staging area contain uncommitted changes.
 If REVISION is a remote branch, offer to create a local tracking branch.
-('git checkout [-b] REVISION')."
+\('git checkout [-b] REVISION')."
   (interactive (list (magit-read-rev "Switch to" (magit-default-rev))))
   (if rev
       (if (not (magit-maybe-create-local-tracking-branch rev))
@@ -2557,7 +2574,7 @@ If REVISION is a remote branch, offer to create a local tracking branch.
 (defun magit-create-branch (branch parent)
   "Switch 'HEAD' to new BRANCH at REVISION and update working tree.
 Fails if working tree or staging area contain uncommitted changes.
-('git checkout -b BRANCH REVISION')."
+\('git checkout -b BRANCH REVISION')."
   (interactive (magit-read-create-branch-args))
   (if (and branch (not (string= branch ""))
 	   parent)
@@ -2579,7 +2596,7 @@ Fails if working tree or staging area contain uncommitted changes.
 (defun magit-manual-merge (rev)
   "Merge REVISION into the current 'HEAD'; leave changes uncommitted.
 With a prefix-arg, the merge will be squashed.
-('git merge --no-commit [--squash|--no-ff] REVISION')."
+\('git merge --no-commit [--squash|--no-ff] REVISION')."
   (interactive
    (list (magit-read-rev (concat "Manually merge"
 				 (when current-prefix-arg
@@ -2594,7 +2611,7 @@ With a prefix-arg, the merge will be squashed.
 
 (defun magit-automatic-merge (rev)
   "Merge REVISION into the current 'HEAD'; commit unless merge fails.
-('git merge REVISION')."
+\('git merge REVISION')."
   (interactive (list (magit-read-rev "Merge" (magit-guess-branch))))
   (if rev
       (magit-run-git "merge" (magit-rev-to-git rev))))
@@ -2742,7 +2759,7 @@ If USE-CACHE is non nil, use the cached information."
 Any differences from REVISION become new changes to be committed.
 With prefix argument, all uncommitted changes in working tree
 and staging area are lost.
-('git reset [--soft|--hard] REVISION')."
+\('git reset [--soft|--hard] REVISION')."
   (interactive (list (magit-read-rev (format "%s head to"
 					     (if current-prefix-arg
 						 "Hard reset"
@@ -2757,7 +2774,7 @@ and staging area are lost.
 (defun magit-reset-head-hard (rev)
   "Switch 'HEAD' to REVISION, losing all uncommitted changes
 in both working tree and staging area.
-('git reset --hard REVISION')."
+\('git reset --hard REVISION')."
   (interactive (list (magit-read-rev (format "Hard reset head to")
 				     (or (magit-default-rev)
 					 "HEAD"))))
@@ -2765,7 +2782,7 @@ in both working tree and staging area.
 
 (defun magit-reset-working-tree ()
   "Revert working tree and clear changes from staging area.
-('git reset --hard HEAD')."
+\('git reset --hard HEAD')."
   (interactive)
   (when (yes-or-no-p "Discard all uncommitted changes? ")
     (magit-reset-head-hard "HEAD")))
@@ -2883,10 +2900,11 @@ in both working tree and staging area.
     (or info
 	(error "No rewrite in progress"))
     (let* ((pending (cdr (assq 'pending info)))
-	   (first-unused (find-if (lambda (p)
-				    (not (plist-get (cdr p) 'used)))
-				  pending
-				  :from-end t))
+	   (first-unused 
+	    (let ((rpend (reverse pending)))
+	      (while (and rpend (plist-get (cdr (car rpend)) 'used))
+		(setq rpend (cdr rpend)))
+	      (car rpend)))
 	   (commit (car first-unused)))
       (cond ((not first-unused)
 	     (magit-rewrite-stop t))
@@ -3071,7 +3089,7 @@ Prefix arg means justify as well."
 
 (defun magit-log-edit-commit ()
   "Finish edits and create new commit object.
-('git commit ...')"
+\('git commit ...')"
   (interactive)
   (let* ((fields (magit-log-edit-get-fields))
 	 (amend (equal (cdr (assq 'amend fields)) "yes"))
@@ -3122,7 +3140,7 @@ Prefix arg means justify as well."
 
 (defun magit-log-edit-toggle-amending ()
   "Toggle whether this will be an amendment to the previous commit.
-(i.e., whether eventual commit does 'git commit --amend')"
+\(i.e., whether eventual commit does 'git commit --amend')"
   (interactive)
   (let* ((fields (magit-log-edit-get-fields))
 	 (cell (assq 'amend fields)))
@@ -3135,7 +3153,7 @@ Prefix arg means justify as well."
 
 (defun magit-log-edit-toggle-signoff ()
   "Toggle whether this commit will include a signoff.
-(i.e., whether eventual commit does 'git commit --signoff')"
+\(i.e., whether eventual commit does 'git commit --signoff')"
   (interactive)
   (let* ((fields (magit-log-edit-get-fields))
 	 (cell (assq 'sign-off fields)))
@@ -3236,7 +3254,7 @@ Prefix arg means justify as well."
 (defun magit-tag (name)
   "Creates a new lightweight tag with the given NAME.
 Tag will point to the current 'HEAD'.
-('git tag NAME')."
+\('git tag NAME')."
   (interactive "sNew tag name: ")
   (magit-run-git "tag" name))
 
@@ -3278,7 +3296,7 @@ Tag will point to the current 'HEAD'."
   "Create new stash of working tree and staging area named DESCRIPTION,
 working tree and staging area revert to the current 'HEAD'.
 With prefix argument, changes in staging area are kept.
-('git stash save [--keep-index] DESCRIPTION')"
+\('git stash save [--keep-index] DESCRIPTION')"
   (interactive "sStash description: ")
   (apply 'magit-run-git `("stash"
 			  "save"
@@ -3287,7 +3305,7 @@ With prefix argument, changes in staging area are kept.
 
 (defun magit-stash-snapshot ()
   "Create new stash of working tree and staging area; keep changes in place.
-('git stash save \"Snapshot...\"; git stash apply stash@{0}')"
+\('git stash save \"Snapshot...\"; git stash apply stash@{0}')"
   (interactive)
   (magit-with-refresh
     (magit-run-git "stash" "save"
@@ -3627,8 +3645,12 @@ With a non numeric prefix ARG, show all entries"
 	(let* ((excluded (magit-file-lines ".git/info/wazzup-exclude"))
 	       (all-branches (magit-list-interesting-refs))
 	       (branches (if all all-branches
-			   (remove-if (lambda (b) (member (cdr b) excluded))
-				      all-branches)))
+			   (delq nil (mapcar
+				      (lambda (b)
+					(and (not 
+					      (member (cdr b) excluded))
+					     b))
+				      all-branches))))
 	       (reported (make-hash-table :test #'equal)))
 	  (dolist (branch branches)
 	    (let* ((name (car branch))
