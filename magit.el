@@ -2246,7 +2246,9 @@ insert a line to tell how to insert more of them"
 		       "--cc" "-p" commit)))
 
 (define-minor-mode magit-commit-mode
-    "Minor mode to view git commit"
+    "Minor mode to view git commit
+
+\\{magit-commit-mode-map}"
   :group magit
   :init-value ()
   :lighter ()
@@ -2421,7 +2423,9 @@ insert a line to tell how to insert more of them"
 	(magit-run* (list "git" "init"))))))
 
 (define-minor-mode magit-status-mode
-    "Minor mode for looking at git status"
+    "Minor mode for looking at git status
+
+\\{magit-status-mode-map}"
   :group magit
   :init-value ()
   :lighter ()
@@ -3277,7 +3281,9 @@ With prefix argument, changes in staging area are kept.
 (defvar magit-currently-shown-stash nil)
 
 (define-minor-mode magit-stash-mode
-    "Minor mode for looking at git status"
+    "Minor mode for looking at git status
+
+\\{magit-stash-mode-map}"
   :group magit
   :init-value ()
   :lighter ()
@@ -3465,7 +3471,9 @@ With a non numeric prefix ARG, show all entries"
 	     "--"))))
 
 (define-minor-mode magit-log-mode
-    "Minor mode for looking at git status"
+    "Minor mode for looking at git status
+
+\\{magit-log-mode-map}"
   :group magit
   :init-value ()
   :lighter ()
@@ -3524,7 +3532,9 @@ With a non numeric prefix ARG, show all entries"
 		       args)))
 
 (define-minor-mode magit-reflog-mode
-    "Minor mode for looking at git status"
+    "Minor mode for looking at git status
+
+\\{magit-reflog-mode-map}"
   :group magit
   :init-value ()
   :lighter ()
@@ -3554,7 +3564,9 @@ With a non numeric prefix ARG, show all entries"
 		       "diff" (magit-diff-U-arg) args)))
 
 (define-minor-mode magit-diff-mode
-    "Minor mode for looking at git status"
+    "Minor mode for looking at git status
+
+\\{magit-diff-mode-map}"
   :group magit
   :init-value ()
   :lighter ()
@@ -3644,7 +3656,9 @@ With a non numeric prefix ARG, show all entries"
 		  (magit-set-section-info ref section))))))))))
 
 (define-minor-mode magit-wazzup-mode
-    "Minor mode for looking at git status"
+    "Minor mode for looking at git status
+
+\\{magit-wazzup-mode-map}"
   :group magit
   :init-value ()
   :lighter ()
