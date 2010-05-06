@@ -141,6 +141,11 @@ Setting this to nil will make it do nothing, setting it to t will arrange things
 		 (const :tag "Immediately" 0)
 		 (integer :tag "After this many seconds")))
 
+(defcustom magit-revert-item-confirm nil
+  "Require acknowledgment before reverting an item"
+  :group 'magit
+  :type 'boolean)
+
 (defcustom magit-log-edit-confirm-cancellation nil
   "Require acknowledgment before canceling the log edit buffer."
   :group 'magit
@@ -3443,16 +3448,19 @@ With prefix argument, changes in staging area are kept.
 
 (defun magit-revert-item ()
   (interactive)
-  (magit-section-action (item info "revert")
-    ((pending commit)
-     (magit-apply-commit info nil nil t)
-     (magit-rewrite-set-commit-property info 'used nil))
-    ((commit)
-     (magit-apply-commit info nil nil t))
-    ((hunk)
-     (magit-apply-hunk-item-reverse item))
-    ((diff)
-     (magit-apply-diff-item item "--reverse"))))
+  (when (or (not magit-revert-item-confirm)
+	    (yes-or-no-p
+	     "Really revert this item (cannot be undone)? "))
+    (magit-section-action (item info "revert")
+      ((pending commit)
+       (magit-apply-commit info nil nil t)
+       (magit-rewrite-set-commit-property info 'used nil))
+      ((commit)
+       (magit-apply-commit info nil nil t))
+      ((hunk)
+       (magit-apply-hunk-item-reverse item))
+      ((diff)
+       (magit-apply-diff-item item "--reverse")))))
 
 (defvar magit-have-graph 'unset)
 (defvar magit-have-decorate 'unset)
@@ -4042,9 +4050,11 @@ With prefix force the removal even it it hasn't been merged."
 			(buffer-C ediff-buffer-C)
 			(buffer-Ancestor ediff-ancestor-buffer)
 			(file magit-ediff-file)
+			(file-buffer)
 			(windows magit-ediff-windows))
 		    (ediff-cleanup-mess)
 		    (find-file file)
+		    (setq file-buffer (current-buffer))
 		    (erase-buffer)
 		    (insert-buffer-substring buffer-C)
 		    (kill-buffer buffer-A)
@@ -4052,8 +4062,12 @@ With prefix force the removal even it it hasn't been merged."
 		    (kill-buffer buffer-C)
 		    (when (bufferp buffer-Ancestor) (kill-buffer buffer-Ancestor))
 		    (set-window-configuration windows)
-		    (message "Conflict resolution finished; you may save the buffer")))))))
-
+		    (if magit-save-some-buffers
+			(save-some-buffers
+			 (eq magit-save-some-buffers 'dontask)
+			 (lambda ()
+			   (eq (current-buffer) file-buffer)))
+		      (message "Conflict resolution finished; you may save the buffer"))))))))
 
 (defun magit-interactive-resolve-item ()
   (interactive)
