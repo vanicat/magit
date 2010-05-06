@@ -305,7 +305,6 @@ Many Magit faces inherit from this one by default."
     (defalias 'magit-start-process 'start-file-process)
     (defalias 'magit-start-process 'start-process))
 
-
 ;;; Utilities
 
 (defvar magit-submode nil)
@@ -1278,17 +1277,17 @@ FUNC should leave point at the end of the modified region"
 	      (input
 	       (with-current-buffer input
 		 (setq default-directory dir)
-                 (setq magit-process
-                       (apply 'magit-start-process cmd buf cmd args))
-                 (set-process-filter magit-process 'magit-process-filter)
-                 (process-send-region magit-process
-                                      (point-min) (point-max))
+		 (setq magit-process
+		       (apply 'magit-start-process cmd buf cmd args))
+		 (set-process-filter magit-process 'magit-process-filter)
+		 (process-send-region magit-process
+				      (point-min) (point-max))
 		 (process-send-eof magit-process)
-                 (while (equal (process-status magit-process) 'run)
-                   (sit-for 0.1 t))
+		 (while (equal (process-status magit-process) 'run)
+		   (sit-for 0.1 t))
 		 (setq successp
 		       (equal (process-exit-status magit-process) 0))
-                 (setq magit-process nil))
+		 (setq magit-process nil))
 	       (magit-set-mode-line-process nil)
 	       (magit-need-refresh magit-process-client-buffer))
 	      (t
@@ -3863,7 +3862,8 @@ With a non numeric prefix ARG, show all entries"
   "Start a git rebase -i session, old school-style."
   (interactive)
   (require 'server)
-  (unless (server-running-p)
+  (if (or (< emacs-major-version 23)
+          (not (server-running-p)))
     (server-start))
   (let* ((section (get-text-property (point) 'magit-section))
 	 (commit (and (member 'commit (magit-section-context-type section))
