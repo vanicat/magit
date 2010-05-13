@@ -1507,6 +1507,7 @@ FUNC should leave point at the end of the modified region"
     (define-key map (kbd "d") 'magit-diff-working-tree)
     (define-key map (kbd "D") 'magit-diff)
     (define-key map (kbd "a") 'magit-apply-item)
+    (define-key map (kbd "s") 'magit-log-grep)
     (define-key map (kbd "A") 'magit-cherry-pick-item)
     (define-key map (kbd "v") 'magit-revert-item)
     (define-key map (kbd "b") 'magit-checkout)
@@ -2165,7 +2166,7 @@ in the corresponding directories."
 
 (defvar magit-log-oneline-re
   (concat
-   "^\\([_\\*|/ ]+\\)"           ; graph   (1)
+   "^\\([_\\*|/ -.]+\\)"         ; graph   (1)
    "\\(?:"
    "\\([0-9a-fA-F]\\{40\\}\\) "  ; sha1    (2)
    "\\(?:\\((.+?)\\) \\)?"       ; refs    (3)
@@ -4041,16 +4042,13 @@ With prefix force the removal even it it hasn't been merged."
 	(error "Cannot resolve %s" file))
     (with-current-buffer base-buffer
       (if (string-match "^[0-9]+ [0-9a-f]+ 1" merge-status)
-	  (insert (magit-git-string "cat-file" "blob"
-				    (concat ":1:" file)))))
+	  (insert (magit-git-output `("cat-file" "blob" ,(concat ":1:" file))))))
     (with-current-buffer our-buffer
       (if (string-match "^[0-9]+ [0-9a-f]+ 2" merge-status)
-	  (insert (magit-git-string "cat-file" "blob"
-				    (concat ":2:" file)))))
+	  (insert (magit-git-output `("cat-file" "blob" ,(concat ":2:" file))))))
     (with-current-buffer their-buffer
       (if (string-match "^[0-9]+ [0-9a-f]+ 3" merge-status)
-	  (insert (magit-git-string "cat-file" "blob"
-				    (concat ":3:" file)))))
+	  (insert (magit-git-output `("cat-file" "blob" ,(concat ":3:" file))))))
     ;; We have now created the 3 buffer with ours, theirs and the ancestor files
     (with-current-buffer (ediff-merge-buffers-with-ancestor our-buffer their-buffer base-buffer)
       (make-local-variable 'magit-ediff-file)
@@ -4110,7 +4108,34 @@ With a prefix arg, do a submodule update --init"
   (let ((default-directory (magit-get-top-dir default-directory)))
     (magit-run-git-async "submodule" "sync")))
 
+(defun magit-list-buffers ()
+  "Returns a list of magit buffers."
+  (delq nil (mapcar (lambda (b)
+                      (save-excursion
+                        (set-buffer b)
+                        (when (eq major-mode 'magit-mode)
+                          b)))
+                    (buffer-list))))
+
+(defun remove-dupes (list)
+  "Remove the duplicate items in a sorted list."
+  (let (tmp-list head)
+    (while list
+      (setq head (pop list))
+      (unless (equal head (car list))
+        (push head tmp-list)))
+    (reverse tmp-list)))
+
+(defun magit-list-projects ()
+  "Returns a list of directories with a magit representation."
+  (remove-dupes
+   (sort
+    (mapcar (lambda (b)
+              (save-excursion
+                (set-buffer b)
+                (directory-file-name default-directory)))
+            (magit-list-buffers))
+    'string=)))
 
 (provide 'magit)
-
 ;;; magit.el ends here

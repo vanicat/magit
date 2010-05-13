@@ -2,6 +2,7 @@
 @c %**start of header
 @setfilename magit.info
 @settitle Magit User Manual
+@documentencoding utf-8
 @c %**end of header
 
 @dircategory Emacs
@@ -375,6 +376,8 @@ the marked commit no matter where point is, use @kbd{C-u .}.
 Some commands, such as @kbd{=}, will use the current commit and the
 marked commit as implicit arguments.  Other commands will offer the
 marked commit as a default when prompting for their arguments.
+
+To grep the history press @kbd{s}.
 
 @node Reflogs
 @chapter Reflogs
