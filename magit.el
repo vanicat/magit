@@ -1623,7 +1623,7 @@ FUNC should leave point at the end of the modified region"
     ["Display Git output" magit-display-process t]
     ["Quit Magit" quit-window t]))
 
-(defvar magit-mode-hook nil)
+(defvar magit-mode-hook nil "Hook run by `magit-mode'")
 
 (put 'magit-mode 'mode-class 'special)
 
@@ -2979,6 +2979,8 @@ in both working tree and staging area.
 
 ;;; Log edit mode
 
+(defvar magit-log-edit-mode-hook nil "Hook run by `magit-log-edit-mode'")
+
 (defvar magit-log-edit-buffer-name "*magit-edit-log*"
   "Buffer name for composing commit messages")
 
@@ -3009,7 +3011,8 @@ Prefix arg means justify as well."
 
 (define-derived-mode magit-log-edit-mode text-mode "Magit Log Edit"
   (set (make-local-variable 'fill-paragraph-function)
-       'magit-log-fill-paragraph))
+       'magit-log-fill-paragraph)
+  (run-mode-hooks 'magit-log-edit-mode-hook))
 
 (defun magit-log-edit-cleanup ()
   (save-excursion
@@ -3272,7 +3275,7 @@ Tag will point to the current 'HEAD'.
 (defun magit-annotated-tag (name)
   "Start composing an annotated tag with the given NAME.
 Tag will point to the current 'HEAD'."
-  (interactive "sNew tag name: ")
+  (interactive "sNew annotated tag name: ")
   (magit-log-edit-set-field 'tag name)
   (magit-pop-to-log-edit "tag"))
 
