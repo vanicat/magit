@@ -2770,11 +2770,11 @@ Fails if working tree or staging area contain uncommitted changes.
   (interactive (magit-read-create-branch-args))
   (if (and branch (not (string= branch ""))
 	   parent)
-      (magit-run-git "checkout" "-b"
-		     (append
-		      magit-custom-options
-		      branch
-		      (magit-rev-to-git parent)))))
+      (apply #'magit-run-git "checkout" "-b"
+	     (append
+	      magit-custom-options
+	      (list branch
+		    (magit-rev-to-git parent))))))
 
 (defun magit-delete-branch (branch)
   "Asks for a branch and deletes it.
