@@ -248,6 +248,30 @@ Many Magit faces inherit from this one by default."
   "Face for git tag labels shown in log buffer."
   :group 'magit)
 
+(defface magit-log-head-label-bisect-good
+  '((((class color) (background light))
+     :box t
+     :background "light green"
+     :foreground "dark olive green")
+    (((class color) (background dark))
+     :box t
+     :background "light green"
+     :foreground "dark olive green"))
+  "Face for good bisect refs"
+  :group 'magit)
+
+(defface magit-log-head-label-bisect-bad
+  '((((class color) (background light))
+     :box t
+     :background "IndianRed1"
+     :foreground "IndianRed4")
+    (((class color) (background dark))
+     :box t
+     :background "IndianRed1"
+     :foreground "IndianRed4"))
+  "Face for bad bisect refs"
+  :group 'magit)
+
 (defface magit-log-head-label-remote
   '((((class color) (background light))
      :box t
@@ -263,12 +287,12 @@ Many Magit faces inherit from this one by default."
 (defface magit-log-head-label-tags
   '((((class color) (background light))
      :box t
-     :background "Grey85"
-     :foreground "VioletRed1")
+     :background "LemonChiffon1"
+     :foreground "goldenrod4")
     (((class color) (background dark))
      :box t
-     :background "Grey13"
-     :foreground "khaki1"))
+     :background "LemonChiffon1"
+     :foreground "goldenrod4"))
   "Face for tag labels shown in log buffer."
   :group 'magit)
 
@@ -1618,6 +1642,9 @@ returns nil, unless `all-p' evals to true."
 
 (defvar magit-commit-mode-map
   (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "a") 'magit-apply-item)
+    (define-key map (kbd "A") 'magit-cherry-pick-item)
+    (define-key map (kbd "v") 'magit-revert-item)
     map))
 
 (defvar magit-status-mode-map
@@ -1678,6 +1705,7 @@ returns nil, unless `all-p' evals to true."
     (define-key map (kbd "x") 'magit-reset-head)
     (define-key map (kbd "e") 'magit-log-show-more-entries)
     (define-key map (kbd "l") 'magit-log-menu)
+    (define-key map (kbd "t") 'magit-tag)
     map))
 
 (defvar magit-reflog-mode-map
@@ -2334,7 +2362,7 @@ must return a string which will represent the log line.")
 
 (defun magit-present-log-line (graph sha1 refs message)
   "The default log line generator."
-  (let* ((ref-re "\\(?:tag: \\)?refs/\\(tags\\|remotes\\|heads\\)/\\(.+\\)")
+  (let* ((ref-re "\\(?:tag: \\)?refs/\\(bisect\\|tags\\|remotes\\|heads\\)/\\(.+\\)")
 	 (string-refs
 	  (when refs
 	    (concat (mapconcat
@@ -2346,22 +2374,26 @@ must return a string which will represent the log line.")
 			'face (cond
 			       ((string= (match-string 1 r) "remotes")
 				'magit-log-head-label-remote)
+			       ((string= (match-string 1 r) "bisect")
+				(if (string= (match-string 2 r) "bad")
+				    'magit-log-head-label-bisect-bad
+				  'magit-log-head-label-bisect-good))
 			       ((string= (match-string 1 r) "tags")
 				'magit-log-head-label-tags)
-				((string= (match-string 1 r) "heads")
-				 'magit-log-head-label-local))))
-		       refs
-		       " ")
-		     " "))))
-	 (concat
-	  (if sha1
-	      (propertize (substring sha1 0 8) 'face 'magit-log-sha1)
-	    (insert-char ? 8))
-	  " "
-	  (propertize graph 'face 'magit-log-graph)
-	  string-refs
-	  (when message
-	    (propertize message 'face 'magit-log-message)))))
+			       ((string= (match-string 1 r) "heads")
+				'magit-log-head-label-local))))
+		     refs
+		     " ")
+		    " "))))
+    (concat
+     (if sha1
+	 (propertize (substring sha1 0 8) 'face 'magit-log-sha1)
+       (insert-char ? 8))
+     " "
+     (propertize graph 'face 'magit-log-graph)
+     string-refs
+     (when message
+       (propertize message 'face 'magit-log-message)))))
 
 (defvar magit-log-count ()
   "internal var used to count the number of log actualy added in a buffer")
@@ -3433,12 +3465,14 @@ Prefix arg means justify as well."
 
 ;;; Tags
 
-(defun magit-tag (name)
-  "Creates a new lightweight tag with the given NAME.
-Tag will point to the current 'HEAD'.
+(defun magit-tag (name rev)
+  "Creates a new lightweight tag with the given NAME at REV.
 \('git tag NAME')."
-  (interactive "sNew tag name: ")
-  (magit-run-git "tag" name))
+  (interactive
+   (list
+    (read-string "Tag name: ")
+    (magit-read-rev "Place tag on: " (or (magit-default-rev) "HEAD"))))
+  (magit-run-git "tag" name rev))
 
 (defun magit-annotated-tag (name)
   "Start composing an annotated tag with the given NAME.
