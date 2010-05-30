@@ -1265,8 +1265,7 @@ FUNC should leave point at the end of the modified region"
     (magit-set-mode-line-process
      (magit-process-indicator-from-command cmd-and-args))
     (setq magit-process-client-buffer (current-buffer))
-    (save-excursion
-      (set-buffer buf)
+    (with-current-buffer buf
       (view-mode 1)
       (set (make-local-variable 'view-no-disable-on-exit) t)
       (setq view-exit-action
@@ -1884,8 +1883,7 @@ Please see the manual for a complete description of Magit.
 (defun magit-find-buffer (submode &optional dir)
   (let ((topdir (magit-get-top-dir (or dir default-directory))))
     (dolist (buf (buffer-list))
-      (if (save-excursion
-	    (set-buffer buf)
+      (if (with-current-buffer buf
 	    (and default-directory
 		 (equal (expand-file-name default-directory) topdir)
 		 (eq major-mode 'magit-mode)
@@ -1897,8 +1895,7 @@ Please see the manual for a complete description of Magit.
 
 (defun magit-for-all-buffers (func &optional dir)
   (dolist (buf (buffer-list))
-    (save-excursion
-      (set-buffer buf)
+    (with-current-buffer buf
       (if (and (eq major-mode 'magit-mode)
 	       (or (null dir)
 		   (equal default-directory dir)))
@@ -3224,8 +3221,7 @@ Prefix arg means justify as well."
 	(replace-match "\n" nil nil))))
 
 (defun magit-log-edit-append (str)
-  (save-excursion
-    (set-buffer (get-buffer-create magit-log-edit-buffer-name))
+  (with-current-buffer (get-buffer-create magit-log-edit-buffer-name)
     (goto-char (point-max))
     (insert str "\n")))
 
@@ -3235,8 +3231,7 @@ Prefix arg means justify as well."
   (let ((buf (get-buffer magit-log-edit-buffer-name))
 	(result nil))
     (if buf
-	(save-excursion
-	  (set-buffer buf)
+	(with-current-buffer buf
 	  (goto-char (point-min))
 	  (while (looking-at "^\\([A-Za-z0-9-_]+\\): *\\(.*\\)$")
 	    (setq result (acons (intern (downcase (match-string 1)))
@@ -3249,8 +3244,7 @@ Prefix arg means justify as well."
 
 (defun magit-log-edit-set-fields (fields)
   (let ((buf (get-buffer-create magit-log-edit-buffer-name)))
-    (save-excursion
-      (set-buffer buf)
+    (with-current-buffer buf
       (goto-char (point-min))
       (if (search-forward-regexp (format "^\\([A-Za-z0-9-_]+:.*\n\\)+%s"
 					 (regexp-quote magit-log-header-end))
@@ -3849,8 +3843,7 @@ With a non numeric prefix ARG, show all entries"
 	     (args (magit-rev-range-to-git range))
 	     (buf (get-buffer-create "*magit-diff*")))
 	(display-buffer buf)
-	(save-excursion
-	  (set-buffer buf)
+	(with-current-buffer buf
 	  (magit-mode-init dir 'diff #'magit-refresh-diff-buffer range args)
 	  (magit-diff-mode t)))))
 
@@ -4036,7 +4029,8 @@ With a non numeric prefix ARG, show all entries"
      (let ((file (magit-diff-item-file (magit-hunk-item-diff item)))
 	   (line (magit-hunk-item-target-line item)))
        (find-file file)
-       (goto-line line)))
+       (goto-char (point-min))
+       (forward-line (1- line))))
     ((commit)
      (magit-show-commit info)
      (pop-to-buffer magit-commit-buffer-name))
@@ -4099,12 +4093,37 @@ With a non numeric prefix ARG, show all entries"
 
 (eval-when-compile (require 'server))
 
+(defun magit-server-running-p ()
+  "Test whether server is running (works with < 23 as well).
+
+Return values:
+  nil		   the server is definitely not running.
+  t		   the server seems to be running.
+  something else   we cannot determine whether it's running without using
+		   commands which may have to wait for a long time."
+  (if (functionp 'server-running-p)
+      (server-running-p)
+    (condition-case nil
+	(if server-use-tcp
+	    (with-temp-buffer
+	      (insert-file-contents-literally (expand-file-name server-name server-auth-dir))
+	      (or (and (looking-at "127\\.0\\.0\\.1:[0-9]+ \\([0-9]+\\)")
+		       (assq 'comm
+			     (process-attributes
+			      (string-to-number (match-string 1))))
+		       t)
+		  :other))
+	  (delete-process
+	   (make-network-process
+	    :name "server-client-test" :family 'local :server nil :noquery t
+	    :service (expand-file-name server-name server-socket-dir)))
+	  t)
+      (file-error nil))))
+
 (defun magit-interactive-rebase ()
   "Start a git rebase -i session, old school-style."
   (interactive)
-  (require 'server)
-  (if (or (< emacs-major-version 23)
-          (not (server-running-p)))
+  (unless (magit-server-running-p)
     (server-start))
   (let* ((section (get-text-property (point) 'magit-section))
 	 (commit (and (member 'commit (magit-section-context-type section))
@@ -4309,8 +4328,7 @@ With prefix force the removal even it it hasn't been merged."
 (defun magit-list-buffers ()
   "Returns a list of magit buffers."
   (delq nil (mapcar (lambda (b)
-                      (save-excursion
-                        (set-buffer b)
+                      (with-current-buffer b
                         (when (eq major-mode 'magit-mode)
                           b)))
                     (buffer-list))))
@@ -4329,8 +4347,7 @@ With prefix force the removal even it it hasn't been merged."
   (remove-dupes
    (sort
     (mapcar (lambda (b)
-              (save-excursion
-                (set-buffer b)
+              (with-current-buffer b
                 (directory-file-name default-directory)))
             (magit-list-buffers))
     'string=)))
