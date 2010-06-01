@@ -2744,7 +2744,7 @@ If REVISION is a remote branch, offer to create a local tracking branch.
   (if rev
       (if (not (magit-maybe-create-local-tracking-branch rev))
 	  (magit-run-git "checkout" magit-custom-options
-			 (magit-rev-to-git rev))))))
+			 (magit-rev-to-git rev)))))
 
 (defun magit-read-create-branch-args ()
   (let* ((cur-branch (magit-get-current-branch))
@@ -2775,7 +2775,7 @@ If the branch is the current one, offers to switch to `master' first.
       (setq branch nil)))
   (when branch
     (magit-run-git "branch" "-d" magit-custom-options
-		   (magit-rev-to-git branch)))))
+		   (magit-rev-to-git branch))))
 
 (defun magit-move-branch (old new)
   "Renames or moves a branch.
