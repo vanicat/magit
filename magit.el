@@ -1,4 +1,4 @@
-;;; Magit -- control Git from Emacs.
+;;; magit.el -- control Git from Emacs.
 
 ;; Copyright (C) 2008 Alex Ott.
 ;; Copyright (C) 2008, 2009, 2010 Alexey Voinov.
@@ -25,6 +25,11 @@
 ;; Copyright (C) 2009 Steve Purcell.
 ;; Copyright (C) 2010 Ævar Arnfjörð Bjarmason.
 ;; Copyright (C) 2010 Óscar Fuentes.
+
+;; Author: Marius Vollmer <marius.vollmer@nokia.com>
+;; Maintainer: Phil Jackson <phil@shellarchive.co.uk>
+;; Version: 0.8.1
+;; Keywords: tools
 
 ;;
 ;; Magit is free software; you can redistribute it and/or modify it
@@ -54,26 +59,7 @@
 ;;
 ;; See the Magit User Manual for more information.
 
-;;; TODO
-
-;; For 0.8:
-;;
-;; - Fix display of unmerged files.
-;; - Fix performance problems with large status buffers.
-;; - Handle the case where remote and local branches have different names.
-;;
-;; Later:
-;;
-;; - Queuing of asynchronous commands.
-;; - Good email integration.
-;; - Showing tags.
-;; - Visiting from staged hunks doesn't always work since the line
-;;   numbers don't refer to the working tree.  Fix that somehow.
-;; - Figure out how to discard staged changes for files that also have
-;;   unstaged changes.
-;; - Get current defun from removed lines in a diff
-;; - Amending commits other than HEAD.
-;; - 'Subsetting', only looking at a subset of all files.
+;;; Code:
 
 (eval-when-compile (require 'cl))
 (require 'log-edit)
@@ -507,6 +493,14 @@ Many Magit faces inherit from this one by default."
 	(substring head 11)
       nil)))
 
+(defun magit-get-current-remote ()
+  "Return the name of the remote for the current branch.
+If there is no current branch, or no remote for that branch,
+return nil."
+  (let* ((branch (magit-get-current-branch))
+         (remote (and branch (magit-get "branch" branch "remote"))))
+    (if (string= remote "") nil remote)))
+
 (defun magit-ref-exists-p (ref)
   (= (magit-git-exit-code "show-ref" "--verify" ref) 0))
 
@@ -659,6 +653,19 @@ Many Magit faces inherit from this one by default."
 		(match-string 1 branch)
 		branch)))))
 
+(defun magit-read-remote (&optional prompt def)
+  "Read the name of a remote.
+PROMPT is used as the prompt, and defaults to \"Remote\".
+DEF is the default value, and defaults to the value of `magit-get-current-branch'."
+  (let* ((prompt (or prompt "Remote"))
+         (def (or def (magit-get-current-remote)))
+         (prompt (if def
+		     (format "%s (default %s): " prompt def)
+		   (format "%s: " prompt)))
+	 (remotes (magit-git-lines "remote"))
+	 (reply (funcall magit-completing-read prompt remotes
+				 nil nil nil nil def)))
+    (if (string= reply "") nil reply)))
 
 ;;; Sections
 
@@ -1411,6 +1418,7 @@ FUNC should leave point at the end of the modified region"
 		nil nil nil nil input)))
 
 (defun magit-run-git-async (&rest args)
+  (message "Running %s %s" magit-git-executable (mapconcat 'identity args " "))
   (magit-run* (append (cons magit-git-executable
 			    magit-git-standard-options)
 		      args)
@@ -2313,26 +2321,32 @@ in the corresponding directories."
 	  (forward-line))
 	target))))
 
+(defvar magit-tmp-buffer-name " *magit-tmp*")
+
+(defmacro with-magit-tmp-buffer (var &rest body)
+  (declare (indent 1)
+	   (debug (symbolp &rest form)))
+  `(let ((,var (generate-new-buffer magit-tmp-buffer-name)))
+     (unwind-protect
+	  (progn ,@body)
+       (kill-buffer ,var))))
+
 (defun magit-apply-diff-item (diff &rest args)
   (when (zerop magit-diff-context-lines)
     (setq args (cons "--unidiff-zero" args)))
-  (let ((tmp (get-buffer-create "*magit-tmp*")))
-    (with-current-buffer tmp
-      (erase-buffer))
-    (magit-insert-diff-item-patch diff "*magit-tmp*")
+  (with-magit-tmp-buffer tmp
+    (magit-insert-diff-item-patch diff tmp)
     (apply #'magit-run-git-with-input tmp
 	   "apply" (append args (list "-")))))
 
 (defun magit-apply-hunk-item* (hunk reverse &rest args)
   (when (zerop magit-diff-context-lines)
     (setq args (cons "--unidiff-zero" args)))
-  (let ((tmp (get-buffer-create "*magit-tmp*")))
-    (with-current-buffer tmp
-      (erase-buffer))
+  (with-magit-tmp-buffer tmp
     (if (magit-use-region-p)
 	(magit-insert-hunk-item-region-patch
 	 hunk reverse (region-beginning) (region-end) tmp)
-      (magit-insert-hunk-item-patch hunk tmp))
+	(magit-insert-hunk-item-patch hunk tmp))
     (apply #'magit-run-git-with-input tmp
 	   "apply" (append args (list "-")))))
 
@@ -3161,11 +3175,17 @@ Uncomitted changes in both working tree and staging area are lost.
 
 ;;; Updating, pull, and push
 
-(defun magit-remote-update ()
-  (interactive)
-  (if (magit-svn-enabled)
-      (magit-run-git-async "svn" "fetch")
-    (magit-run-git-async "remote" "update")))
+(defun magit-remote-update (&optional remote)
+  "Update REMOTE. If nil, update all remotes.
+
+When called interactively, update the current remote unless a
+prefix arg is given.  With prefix arg, prompt for a remote and
+update it."
+  (interactive (list (when current-prefix-arg (magit-read-remote))))
+  (cond
+   ((magit-svn-enabled) (magit-run-git-async "svn" "fetch"))
+   (remote (magit-run-git-async "fetch" remote))
+   (t (magit-run-git-async "remote" "update"))))
 
 (defun magit-pull ()
   (interactive)
@@ -3205,13 +3225,6 @@ typing and automatically refreshes the status buffer."
                                 magit-git-standard-options)
                           args)
                   nil nil nil t))))
-
-(defun magit-read-remote (prompt def)
-  (funcall magit-completing-read (if def
-		       (format "%s (default %s): " prompt def)
-		     (format "%s: " prompt))
-		   (magit-git-lines "remote")
-		   nil nil nil nil def))
 
 (defun magit-push ()
   (interactive)
@@ -4434,4 +4447,5 @@ With a prefix arg, do a submodule update --init"
 
 
 (provide 'magit)
+
 ;;; magit.el ends here
