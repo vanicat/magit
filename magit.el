@@ -302,6 +302,9 @@ Many Magit faces inherit from this one by default."
 (defvar magit-completing-read 'completing-read
   "Function to be called when requesting input from the user.")
 
+(defvar magit-read-rev-history nil
+  "The history of inputs to `magit-read-rev'.")
+
 (defvar magit-omit-untracked-dir-contents nil
   "When non-nil magit will only list an untracked directory, not its contents.")
 
@@ -476,7 +479,7 @@ Many Magit faces inherit from this one by default."
 		  dirs))))
 
 (defun magit-get-top-dir (cwd)
-  (let ((cwd (expand-file-name cwd)))
+  (let ((cwd (expand-file-name (file-truename cwd))))
     (when (file-directory-p cwd)
       (let* ((default-directory cwd)
              (cdup (magit-git-string "rev-parse" "--show-cdup")))
@@ -595,7 +598,7 @@ return nil."
 		   (format "%s: " prompt)))
 	 (interesting-refs (magit-list-interesting-refs))
 	 (reply (funcall magit-completing-read prompt interesting-refs
-				 nil nil nil nil def))
+				 nil nil nil 'magit-read-rev-history def))
 	 (rev (or (cdr (assoc reply interesting-refs)) reply)))
     (if (string= rev "")
 	nil
@@ -2483,9 +2486,9 @@ insert a line to tell how to insert more of them"
   (when (looking-at "^commit \\([0-9a-fA-F]\\{40\\}\\)")
     (add-text-properties (match-beginning 1) (match-end 1)
 			 '(face magit-log-sha1)))
-  (search-forward-regexp "^diff" nil t)
-  (goto-char (match-beginning 0))
-  (magit-wash-diffs))
+  (when (search-forward-regexp "^diff" nil t)
+    (goto-char (match-beginning 0))
+    (magit-wash-diffs)))
 
 (defun magit-refresh-commit-buffer (commit)
   (magit-create-buffer-sections
@@ -3235,11 +3238,12 @@ typing and automatically refreshes the status buffer."
 			      (not branch-remote))
 			  (magit-read-remote (format "Push %s to" branch)
 					     branch-remote)
-			branch-remote)))
+			branch-remote))
+	 (ref-branch (magit-get "branch" branch "merge")))
     (if (and (not branch-remote)
 	     (not current-prefix-arg))
 	(magit-set push-remote "branch" branch "remote"))
-    (magit-run-git-async "push" "-v" push-remote branch)))
+    (magit-run-git-async "push" "-v" push-remote (format "%s:%s" branch ref-branch))))
 
 ;;; Log edit mode
 
@@ -4236,7 +4240,12 @@ Return values:
 
 (defun magit--branch-name-from-line (line)
   "Extract the branch name from line LINE of 'git branch' output."
-  (get-text-property 0 'branch-name line))
+  (let ((branch (get-text-property 0 'branch-name line)))
+    (if (and branch
+             (get-text-property 0 'remote line)
+             (string-match-p "^remotes/" branch))
+        (substring branch 8)
+      branch)))
 
 (defun magit--branch-name-at-point ()
   "Get the branch name in the line at point."
@@ -4295,7 +4304,8 @@ With prefix force the removal even it it hasn't been merged."
                  )
                 branch-line)
   (let ((res (list (cons 'current (match-string 1 branch-line))
-                   (cons 'branch  (match-string 2 branch-line)))))
+                   (cons 'branch  (match-string 2 branch-line))
+                   (cons 'remote  (string-match-p "^remotes/" (match-string 2 branch-line))))))
     (if (match-string 4 branch-line)
         (cons (cons 'other-ref (match-string 6 branch-line)) res)
       (append
