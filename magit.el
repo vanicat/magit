@@ -1284,6 +1284,7 @@ FUNC should leave point at the end of the modified region"
   (if (and magit-process
 	   (get-buffer magit-process-buffer-name))
       (error "Git is already running"))
+  (setq cmd-and-args (delete nil cmd-and-args))
   (let ((cmd (car cmd-and-args))
 	(args (cdr cmd-and-args))
 	(dir default-directory)
@@ -2806,8 +2807,8 @@ If REVISION is a remote branch, offer to create a local tracking branch.
   (interactive (list (magit-read-rev "Switch to" (magit-default-rev))))
   (if revision
       (if (not (magit-maybe-create-local-tracking-branch revision))
-	  (magit-run-git "checkout" (append magit-custom-options
-					    (magit-rev-to-git revision))))))
+	  (magit-run-git "checkout" magit-custom-options
+			 (magit-rev-to-git revision)))))
 
 (defun magit-read-create-branch-args ()
   (let* ((cur-branch (magit-get-current-branch))
@@ -2822,11 +2823,10 @@ Fails if working tree or staging area contain uncommitted changes.
   (interactive (magit-read-create-branch-args))
   (if (and branch (not (string= branch ""))
 	   parent)
-      (apply #'magit-run-git "checkout" "-b"
-	     (append
-	      magit-custom-options
-	      (list branch
-		    (magit-rev-to-git parent))))))
+      (magit-run-git "checkout" "-b"
+		     magit-custom-options
+		     branch
+		     (magit-rev-to-git parent))))
 
 (defun magit-delete-branch (branch)
   "Asks for a branch and deletes it.
@@ -2838,8 +2838,8 @@ If the branch is the current one, offers to switch to `master' first.
 	(magit-checkout "master")
       (setq branch nil)))
   (when branch
-    (magit-run-git "branch" "-d" (append magit-custom-options
-					 (magit-rev-to-git branch)))))
+    (magit-run-git "branch" "-d" magit-custom-options
+		   (magit-rev-to-git branch))))
 
 (defun magit-move-branch (old new)
   "Renames or moves a branch.
