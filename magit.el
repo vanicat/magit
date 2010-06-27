@@ -1964,6 +1964,16 @@ Please see the manual for a complete description of Magit.
 	(ignore-errors
 	  (revert-buffer t t nil))))))
 
+(defun magit-update-vc-modeline (dir)
+  "Update the modeline for buffers representable by magit."
+  (dolist (buffer (buffer-list))
+    (when (and buffer
+	       (buffer-file-name buffer)
+	       (magit-string-has-prefix-p (buffer-file-name buffer) dir))
+      (with-current-buffer buffer
+	(ignore-errors
+	  (vc-find-file-hook))))))
+
 (defvar magit-refresh-needing-buffers nil)
 (defvar magit-refresh-pending nil)
 
@@ -3019,9 +3029,10 @@ and staging area are lost.
 				     (or (magit-default-rev)
 					 "HEAD^"))
 		     current-prefix-arg))
-  (if revision
-      (magit-run-git "reset" (if hard "--hard" "--soft")
-		     (magit-rev-to-git revision))))
+  (when revision
+    (magit-run-git "reset" (if hard "--hard" "--soft")
+		   (magit-rev-to-git revision))
+    (magit-update-vc-modeline default-directory)))
 
 (defun magit-reset-head-hard (revision)
   "Switch 'HEAD' to REVISION, losing all changes.
@@ -3231,7 +3242,15 @@ typing and automatically refreshes the status buffer."
     (if (and (not branch-remote)
 	     (not current-prefix-arg))
 	(magit-set push-remote "branch" branch "remote"))
-    (magit-run-git-async "push" "-v" push-remote (format "%s:%s" branch ref-branch))))
+    (magit-run-git-async "push" "-v" push-remote
+                         (if ref-branch
+                             (format "%s:%s" branch ref-branch)
+                           branch))
+    ;; Although git will automatically set up the remote,
+    ;; it doesn't set up the branch to merge (at least as of Git 1.6.6.1),
+    ;; so we have to do that manually.
+    (unless ref-branch
+      (magit-set (concat "refs/heads/" branch) "branch" branch "merge"))))
 
 ;;; Log edit mode
 
@@ -3388,7 +3407,7 @@ Prefix arg means justify as well."
     (bury-buffer)
     (when (file-exists-p ".git/MERGE_MSG")
       (delete-file ".git/MERGE_MSG"))
-    (magit-revert-buffers default-directory t)
+    (magit-update-vc-modeline default-directory)
     (when magit-pre-log-edit-window-configuration
       (set-window-configuration magit-pre-log-edit-window-configuration)
       (setq magit-pre-log-edit-window-configuration nil))))
