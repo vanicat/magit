@@ -1508,29 +1508,24 @@ FUNC should leave point at the end of the modified region"
    '(log cmd ?L "Detailed log" magit-log-long)
    '(log cmd ?h "Reflog" magit-reflog)
    '(log cmd ?H "Reflog head" magit-reflog-head)
-   '(log opt ?a "--all" "All branches" magit-true)
-   '(log opt ?g "--grep=" "Containing regexp" read-from-minibuffer)
-   '(log opt ?A "--author=" "By author" read-from-minibuffer)
-   '(log opt ?C "--committer=" "By committer" read-from-minibuffer)
-   '(log opt ?F "--first-parent"
-	 "Follow only first parent" magit-true)
-   '(log opt ?B "--branches=" "Branches" read-from-minibuffer)
-   '(log opt ?R "--relative=" "Restrict to path" read-directory-name)
+   '(log opt ?a "--all" magit-true)
+   '(log opt ?g "--grep=" read-from-minibuffer)
+   '(log opt ?A "--author=" read-from-minibuffer)
+   '(log opt ?C "--committer=" read-from-minibuffer)
+   '(log opt ?F "--first-parent" magit-true)
+   '(log opt ?B "--branches=" read-from-minibuffer)
+   '(log opt ?R "--relative=" read-directory-name)
    '(branch cmd ?b "Switch" magit-checkout)
    '(branch cmd ?B "Create" magit-create-branch)
    '(branch cmd ?V "Show branches" magit-show-branches)
    '(branch cmd ?k "Delete" magit-delete-branch)
    '(branch cmd ?m "Move/Rename" magit-move-branch)
    '(branch cmd ?w "Wazzup" magit-wazzup)
-   '(branch opt ?T "--no-track"
-	    "Do not track remote parent branch" magit-true)
-   '(branch opt ?R "-r" "Consider remote-tracking branches" magit-true)
-   '(branch opt ?C "--contains"
-	    "Only branches that contains the given commit" magit-read-rev)
-   '(branch opt ?M "--merged"
-	    "Only branches merged into the given commit" magit-read-rev)
-   '(branch opt ?N "--no-merged"
-	    "Only branches not merged into the given commit" magit-read-rev)
+   '(branch opt ?T "--no-track" magit-true)
+   '(branch opt ?R "-r" magit-true)
+   '(branch opt ?C "--contains" magit-read-rev)
+   '(branch opt ?M "--merged" magit-read-rev)
+   '(branch opt ?N "--no-merged" magit-read-rev)
    ))
 
 (defun magit-menu-item-group (item)
@@ -1552,17 +1547,17 @@ FUNC should leave point at the end of the modified region"
 
 (defun magit-menu-item-opt-getter (item)
   (if (eq (magit-menu-item-type item) 'opt)
-      (nth 5 item)
+      (nth 4 item)
     nil))
 
 (defun magit-menu-item-opt-value (item)
   (if (eq (magit-menu-item-type item) 'opt)
-      (nth 6 item)
+      (nth 5 item)
     nil))
 
 (defun magit-menu-item-set-opt-value (item value)
   (when (eq (magit-menu-item-type item) 'opt)
-    (setcar (nthcdr 6 item) value)))
+    (setcar (nthcdr 5 item) value)))
 
 (defun magit-get-menu-options (group)
   (let ((menu-items '()))
