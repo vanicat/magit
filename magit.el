@@ -1503,39 +1503,40 @@ FUNC should leave point at the end of the modified region"
   the user on the menu.")
 
 (defvar magit-menu
-  (list '("Log" ?l "One line log" magit-log)
-	'("Log" ?L "Detailed log" magit-log-long)
-	'("Log" ?h "Reflog" magit-reflog)
-	'("Log" ?H "Reflog head" magit-reflog-head)
-	'("Log" ?a "--all" "All branches" magit-true)
-	'("Log" ?g "--grep=" "Containing regexp" read-from-minibuffer)
-	'("Log" ?A "--author=" "By author" read-from-minibuffer)
-	'("Log" ?C "--committer=" "By committer" read-from-minibuffer)
-	'("Log" ?F "--first-parent"
-	  "Follow only first parent" magit-true)
-	'("Log" ?B "--branches=" "Branches" read-from-minibuffer)
-	'("Log" ?R "--relative=" "Restrict to path" read-directory-name)
-	'("Branch" ?b "Switch" magit-checkout)
-	'("Branch" ?B "Create" magit-create-branch)
-	'("Branch" ?V "Show branches" magit-show-branches)
-	'("Branch" ?k "Delete" magit-delete-branch)
-	'("Branch" ?m "Move/Rename" magit-move-branch)
-	'("Branch" ?w "Wazzup" magit-wazzup)
-	'("Branch" ?T "--no-track"
-	  "Do not track remote parent branch" magit-true)
-	'("Branch" ?R "-r" "Consider remote-tracking branches" magit-true)
-	'("Branch" ?C "--contains"
-	  "Only branches that contains the given commit" magit-read-rev)
-	'("Branch" ?M "--merged"
-	  "Only branches merged into the given commit" magit-read-rev)
-	'("Branch" ?N "--no-merged"
-	  "Only branches not merged into the given commit" magit-read-rev)
-	))
+  (list
+   '(log ?l "One line log" magit-log)
+   '(log ?L "Detailed log" magit-log-long)
+   '(log ?h "Reflog" magit-reflog)
+   '(log ?H "Reflog head" magit-reflog-head)
+   '(log ?a "--all" "All branches" magit-true)
+   '(log ?g "--grep=" "Containing regexp" read-from-minibuffer)
+   '(log ?A "--author=" "By author" read-from-minibuffer)
+   '(log ?C "--committer=" "By committer" read-from-minibuffer)
+   '(log ?F "--first-parent"
+	 "Follow only first parent" magit-true)
+   '(log ?B "--branches=" "Branches" read-from-minibuffer)
+   '(log ?R "--relative=" "Restrict to path" read-directory-name)
+   '(branch ?b "Switch" magit-checkout)
+   '(branch ?B "Create" magit-create-branch)
+   '(branch ?V "Show branches" magit-show-branches)
+   '(branch ?k "Delete" magit-delete-branch)
+   '(branch ?m "Move/Rename" magit-move-branch)
+   '(branch ?w "Wazzup" magit-wazzup)
+   '(branch ?T "--no-track"
+	    "Do not track remote parent branch" magit-true)
+   '(branch ?R "-r" "Consider remote-tracking branches" magit-true)
+   '(branch ?C "--contains"
+	    "Only branches that contains the given commit" magit-read-rev)
+   '(branch ?M "--merged"
+	    "Only branches merged into the given commit" magit-read-rev)
+   '(branch ?N "--no-merged"
+	    "Only branches not merged into the given commit" magit-read-rev)
+   ))
 
 (defun magit-get-menu-options (group)
   (let ((menu-items '()))
     (dolist (item magit-menu)
-      (when (string= (car item) group)
+      (when (eq (car item) group)
 	(cond
 	 ((stringp (nth 3 item)) ;; It's an option
 	  ;; We append an extra cell to the item for storing the option's value:
@@ -1564,7 +1565,7 @@ FUNC should leave point at the end of the modified region"
 (defun magit-build-menu (group menu-items)
   (erase-buffer)
   (let ((s ""))
-    (insert group " variants\n")
+    (insert (symbol-name group) " variants\n")
     (dolist (item menu-items)
       (when (functionp (nth 3 item))
 	(setq s (concat (string (nth 1 item)) "  " (nth 2 item)))
@@ -2839,7 +2840,7 @@ With prefix argument, add remaining untracked files as well.
 
 (defun magit-branch-menu (&optional arg)
   (interactive "P")
-  (magit-menu "Branch" arg))
+  (magit-menu 'branch arg))
 
 (defun magit-get-tracking-name (remote branch)
   "Given a REMOTE and a BRANCH name, ask the user for a local
@@ -3907,7 +3908,7 @@ level commits."
 
 (defun magit-log-menu (&optional arg)
   (interactive "P")
-  (magit-menu "Log" arg))
+  (magit-menu 'log arg))
 
 (defun magit-log-grep (str)
   "Search for regexp specified by STR in the commit log."
