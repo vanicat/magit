@@ -1503,44 +1503,71 @@ FUNC should leave point at the end of the modified region"
   the user on the menu.")
 
 (defvar magit-menu
-  (list '("Log" ?l "One line log" magit-log)
-	'("Log" ?L "Detailed log" magit-log-long)
-	'("Log" ?h "Reflog" magit-reflog)
-	'("Log" ?H "Reflog head" magit-reflog-head)
-	'("Log" ?a "--all" "All branches" magit-true)
-	'("Log" ?g "--grep=" "Containing regexp" read-from-minibuffer)
-	'("Log" ?A "--author=" "By author" read-from-minibuffer)
-	'("Log" ?C "--committer=" "By committer" read-from-minibuffer)
-	'("Log" ?F "--first-parent"
-	  "Follow only first parent" magit-true)
-	'("Log" ?B "--branches=" "Branches" read-from-minibuffer)
-	'("Log" ?R "--relative=" "Restrict to path" read-directory-name)
-	'("Branch" ?b "Switch" magit-checkout)
-	'("Branch" ?B "Create" magit-create-branch)
-	'("Branch" ?V "Show branches" magit-show-branches)
-	'("Branch" ?k "Delete" magit-delete-branch)
-	'("Branch" ?m "Move/Rename" magit-move-branch)
-	'("Branch" ?w "Wazzup" magit-wazzup)
-	'("Branch" ?T "--no-track"
-	  "Do not track remote parent branch" magit-true)
-	'("Branch" ?R "-r" "Consider remote-tracking branches" magit-true)
-	'("Branch" ?C "--contains"
-	  "Only branches that contains the given commit" magit-read-rev)
-	'("Branch" ?M "--merged"
-	  "Only branches merged into the given commit" magit-read-rev)
-	'("Branch" ?N "--no-merged"
-	  "Only branches not merged into the given commit" magit-read-rev)
-	))
+  (list
+   '(log cmd ?l "One line log" magit-log)
+   '(log cmd ?L "Detailed log" magit-log-long)
+   '(log cmd ?h "Reflog" magit-reflog)
+   '(log cmd ?H "Reflog head" magit-reflog-head)
+   '(log opt ?a "--all" magit-true)
+   '(log opt ?g "--grep=" read-from-minibuffer)
+   '(log opt ?A "--author=" read-from-minibuffer)
+   '(log opt ?C "--committer=" read-from-minibuffer)
+   '(log opt ?F "--first-parent" magit-true)
+   '(log opt ?B "--branches=" read-from-minibuffer)
+   '(log opt ?R "--relative=" read-directory-name)
+   '(branch cmd ?b "Switch" magit-checkout)
+   '(branch cmd ?B "Create" magit-create-branch)
+   '(branch cmd ?V "Show branches" magit-show-branches)
+   '(branch cmd ?k "Delete" magit-delete-branch)
+   '(branch cmd ?m "Move/Rename" magit-move-branch)
+   '(branch cmd ?w "Wazzup" magit-wazzup)
+   '(branch opt ?T "--no-track" magit-true)
+   '(branch opt ?R "-r" magit-true)
+   '(branch opt ?C "--contains" magit-read-rev)
+   '(branch opt ?M "--merged" magit-read-rev)
+   '(branch opt ?N "--no-merged" magit-read-rev)
+   ))
+
+(defun magit-menu-item-group (item)
+  (car item))
+
+(defun magit-menu-item-type (item)
+  (nth 1 item))
+
+(defun magit-menu-item-key (item)
+  (nth 2 item))
+
+(defun magit-menu-item-label (item)
+  (nth 3 item))
+
+(defun magit-menu-item-cmd (item)
+  (if (eq (magit-menu-item-type item) 'cmd)
+      (nth 4 item)
+    nil))
+
+(defun magit-menu-item-opt-getter (item)
+  (if (eq (magit-menu-item-type item) 'opt)
+      (nth 4 item)
+    nil))
+
+(defun magit-menu-item-opt-value (item)
+  (if (eq (magit-menu-item-type item) 'opt)
+      (nth 5 item)
+    nil))
+
+(defun magit-menu-item-set-opt-value (item value)
+  (when (eq (magit-menu-item-type item) 'opt)
+    (setcar (nthcdr 5 item) value)))
 
 (defun magit-get-menu-options (group)
   (let ((menu-items '()))
     (dolist (item magit-menu)
-      (when (string= (car item) group)
+      (when (eq (magit-menu-item-group item) group)
 	(cond
-	 ((stringp (nth 3 item)) ;; It's an option
+	 ((eq (magit-menu-item-type item) 'opt) ;; It's an option
 	  ;; We append an extra cell to the item for storing the option's value:
 	  (setq menu-items (append menu-items (list (append item (list nil))))))
-	 ((functionp (nth 3 item)) ;; It's a command
+	 ((eq (magit-menu-item-type item) 'cmd) ;; It's a command
 	  (setq menu-items (append menu-items (list item))))
 	 (t (error "Unrecognised item type in `magit-menu': %S." item)))))
     menu-items))
@@ -1564,18 +1591,19 @@ FUNC should leave point at the end of the modified region"
 (defun magit-build-menu (group menu-items)
   (erase-buffer)
   (let ((s ""))
-    (insert group " variants\n")
+    (insert (symbol-name group) " variants\n")
     (dolist (item menu-items)
-      (when (functionp (nth 3 item))
-	(setq s (concat (string (nth 1 item)) "  " (nth 2 item)))
+      (when (eq (magit-menu-item-type item) 'cmd)
+	(setq s (concat (string (magit-menu-item-key item))
+			"  " (magit-menu-item-label item)))
 	(magit-menu-insert-item s nil)))
     (insert "\nOptions\n")
     (dolist (item menu-items)
       (let ((args (magit-menu-make-arguments-for-option item t)))
 	(when args
-	  (setq s (concat (string (nth 1 item)) "  " (nth 0 args)
+	  (setq s (concat (string (magit-menu-item-key item)) "  " (nth 0 args)
 			  " " (nth 1 args)))
-	  (magit-menu-insert-item s (nth 5 item)))))
+	  (magit-menu-insert-item s (magit-menu-item-opt-value item)))))
     (insert "\n"))
     (setq buffer-read-only nil)
     (fit-window-to-buffer))
@@ -1607,24 +1635,25 @@ FUNC should leave point at the end of the modified region"
 	      (setq prompt "Show help for command: "))
 	     (t
 	      (dolist (item menu-items)
-		(when (char-equal c (nth 1 item))
-		  ;; If a command, fn is a function.
-		  ;; If an option, fn is a string.
-		  (setq fn (nth 3 item))
+		(when (char-equal c (magit-menu-item-key item))
 		  (cond
-		   ((and (stringp fn) display-help-p)
+		   ((and (eq (magit-menu-item-type item) 'opt) display-help-p)
 		    (message "No help for options!")
 		    (sit-for 2))
-		   ((and (stringp fn) (nth 5 item))
-		    (setcar (nthcdr 5 item) nil))
-		   ((stringp fn)
-		    (setcar (nthcdr 5 item)
-			    (funcall (nth 4 item) (concat (nth 2 item) ": "))))
+		   ((and (eq (magit-menu-item-type item) 'opt)
+			 (magit-menu-item-opt-value item))
+		    (magit-menu-item-set-opt-value item nil))
+		   ((eq (magit-menu-item-type item) 'opt)
+		    (magit-menu-item-set-opt-value
+		     item
+		     (funcall (magit-menu-item-opt-getter item)
+			      (concat (magit-menu-item-label item)
+				      ": "))))
 		   (display-help-p
-		    (setq chosen-fn fn)
+		    (setq chosen-fn (magit-menu-item-cmd item))
 		    (throw 'exit 0))
 		   (t
-		    (setq chosen-fn fn)
+		    (setq chosen-fn (magit-menu-item-cmd item))
 		    (throw 'exit 0))))))
 	     (error "Invalid key: %c" c))))))
     (when chosen-fn
@@ -1638,12 +1667,12 @@ FUNC should leave point at the end of the modified region"
   "Returns as a cons cell the arguments for the git process
 depending on the contents of `item'. If the option was not set,
 returns nil, unless `all-p' evals to true."
-  (let* ((option (nth 2 item))
-	 (value (nth 5 item))
+  (let* ((option (magit-menu-item-label item))
+	 (value (magit-menu-item-opt-value item))
 	 (join-valuep
 	  (and (stringp value)
 	       (string= "=" (substring option (- (length option) 1))))))
-    (when (and (stringp (nth 3 item)) (or value all-p))
+    (when (and (eq (magit-menu-item-type item) 'opt) (or value all-p))
 	(cons (concat option (when join-valuep value))
 	      (when (and (stringp value) (not join-valuep)) value)))))
 
@@ -2850,7 +2879,7 @@ With prefix argument, add remaining untracked files as well.
 
 (defun magit-branch-menu (&optional arg)
   (interactive "P")
-  (magit-menu "Branch" arg))
+  (magit-menu 'branch arg))
 
 (defun magit-get-tracking-name (remote branch)
   "Given a REMOTE and a BRANCH name, ask the user for a local
@@ -2867,7 +2896,6 @@ tracking brach name suggesting a sensible default."
       (when (magit-ref-exists-p (concat "refs/heads/" chosen-name))
         (error "'%s' already exists." chosen-name))
       chosen-name)))
-
 
 (defun magit-maybe-create-local-tracking-branch (rev)
   "Depending on the users wishes, create a tracking branch for
@@ -3923,7 +3951,7 @@ level commits."
 
 (defun magit-log-menu (&optional arg)
   (interactive "P")
-  (magit-menu "Log" arg))
+  (magit-menu 'log arg))
 
 (defun magit-log-grep (str)
   "Search for regexp specified by STR in the commit log."
