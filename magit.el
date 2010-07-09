@@ -153,9 +153,15 @@ after a confirmation."
 (defcustom magit-remote-ref-format 'branch-then-remote
   "What format to use for autocompleting refs, in pariticular for remotes.
 
+Autocompletion is used by functions like `magit-checkout',
+`magit-interactive-rebase' and others which offer branch name
+completion.
+
 The value 'name-then-remote means remotes will be of the
 form \"name (remote)\", while the value 'remote-slash-name
-means that they'll be of the form \"remote/name\"."
+means that they'll be of the form \"remote/name\". I.e. something that's
+listed as \"remotes/upstream/next\" by \"git branch -l -a\"
+will be \"upstream/next\"."
   :group 'magit
   :type '(choice (const :tag "name (remote)" branch-then-remote)
                  (const :tag "remote/name" remote-slash-branch)))
@@ -2669,14 +2675,20 @@ insert a line to tell how to insert more of them"
 (defun magit-remote-string (remote remote-branch svn-info)
   (cond
    ((string= "." remote)
-      (format "branch %s"
-	      (propertize remote-branch 'face 'magit-branch)))
+    (format "branch %s"
+	    (propertize remote-branch 'face 'magit-branch)))
    (remote
-      (concat remote " " (magit-get "remote" remote "url")))
+    (concat
+     (propertize remote-branch 'face 'magit-branch)
+     " @ "
+     remote
+     " ("
+     (magit-get "remote" remote "url")
+     ")"))
    (svn-info
-      (concat (cdr (assoc 'url svn-info))
-	      " @ "
-	      (cdr (assoc 'revision svn-info))))))
+    (concat (cdr (assoc 'url svn-info))
+	    " @ "
+	    (cdr (assoc 'revision svn-info))))))
 
 (defun magit-refresh-status ()
   (magit-create-buffer-sections
@@ -3358,8 +3370,7 @@ Prefix arg means justify as well."
 
 (define-derived-mode magit-log-edit-mode text-mode "Magit Log Edit"
   (set (make-local-variable 'fill-paragraph-function)
-       'magit-log-fill-paragraph)
-  (run-mode-hooks 'magit-log-edit-mode-hook))
+       'magit-log-fill-paragraph))
 
 (defun magit-log-edit-cleanup ()
   (save-excursion
