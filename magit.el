@@ -3358,7 +3358,7 @@ With prefix argument, changes in staging area are kept.
 (defvar magit-currently-shown-stash nil)
 
 (define-minor-mode magit-stash-mode
-    "Minor mode for looking at git status
+    "Minor mode for looking at git stash
 
 \\{magit-stash-mode-map}"
   :group magit
@@ -3526,7 +3526,7 @@ With a non numeric prefix ARG, show all entries"
 	     "--"))))
 
 (define-minor-mode magit-log-mode
-    "Minor mode for looking at git status
+    "Minor mode for looking at git logs
 
 \\{magit-log-mode-map}"
   :group magit
@@ -3588,7 +3588,7 @@ This is only non-nil in reflog buffers.")
 		       args)))
 
 (define-minor-mode magit-reflog-mode
-    "Minor mode for looking at git status
+    "Minor mode for looking at git reflogs
 
 \\{magit-reflog-mode-map}"
   :group magit
@@ -3621,7 +3621,7 @@ This is only non-nil in reflog buffers.")
 		       "diff" (magit-diff-U-arg) args)))
 
 (define-minor-mode magit-diff-mode
-    "Minor mode for looking at git status
+    "Minor mode for looking at git diff
 
 \\{magit-diff-mode-map}"
   :group magit
@@ -3724,7 +3724,7 @@ This is only meaningful in wazzup buffers.")
 		  (magit-set-section-info ref section))))))))))
 
 (define-minor-mode magit-wazzup-mode
-    "Minor mode for looking at git status
+    "Minor mode for looking for what is on other branch.
 
 \\{magit-wazzup-mode-map}"
   :group magit
