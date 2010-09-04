@@ -1,6 +1,7 @@
 ;;; magit.el -- control Git from Emacs.
 
-;; Copyright (C) 2008 Alex Ott.
+;; Copyright (C) 2010 Alan Falloon.
+;; Copyright (C) 2008, 2010 Alex Ott.
 ;; Copyright (C) 2008, 2009, 2010 Alexey Voinov.
 ;; Copyright (C) 2010 Ben Walton.
 ;; Copyright (C) 2008 Daniel Farina.
@@ -19,13 +20,16 @@
 ;; Copyright (C) 2009 Pavel Holejsovsky.
 ;; Copyright (C) 2009, 2010 Phil Jackson.
 ;; Copyright (C) 2010 Ramkumar Ramachandra.
+;; Copyright (C) 2010 Remco van 't Veer.
 ;; Copyright (C) 2009 René Stadler.
 ;; Copyright (C) 2010 Roger Crew.
 ;; Copyright (C) 2009, 2010 Rémi Vanicat.
+;; Copyright (C) 2010 Sean Bryant.
 ;; Copyright (C) 2009 Steve Purcell.
+;; Copyright (C) 2010 Timo Juhani Lindfors.
+;; Copyright (C) 2010 Yann Hodique.
 ;; Copyright (C) 2010 Ævar Arnfjörð Bjarmason.
 ;; Copyright (C) 2010 Óscar Fuentes.
-;; Copyright (C) 2010  Yann Hodique
 
 ;; Author: Marius Vollmer <marius.vollmer@nokia.com>
 ;; Maintainer: Phil Jackson <phil@shellarchive.co.uk>
@@ -228,7 +232,7 @@ Many Magit faces inherit from this one by default."
   '((((class color) (background light))
      :foreground "grey11")
     (((class color) (background dark))
-     :foreground "grey30"))
+     :foreground "grey80"))
   "Face for the graph element of the log output."
   :group 'magit)
 
@@ -2332,7 +2336,7 @@ insert a line to tell how to insert more of them"
 		       "-p" commit)))
 
 (define-minor-mode magit-commit-mode
-    "Minor mode to view git commit
+    "Minor mode to view a git commit.
 
 \\{magit-commit-mode-map}"
   :group magit
@@ -2509,7 +2513,7 @@ insert a line to tell how to insert more of them"
 	(magit-run* (list "git" "init"))))))
 
 (define-minor-mode magit-status-mode
-    "Minor mode for looking at git status
+    "Minor mode for looking at git status.
 
 \\{magit-status-mode-map}"
   :group magit
@@ -3358,7 +3362,7 @@ With prefix argument, changes in staging area are kept.
 (defvar magit-currently-shown-stash nil)
 
 (define-minor-mode magit-stash-mode
-    "Minor mode for looking at git stash
+    "Minor mode for looking at a git stash.
 
 \\{magit-stash-mode-map}"
   :group magit
@@ -3446,7 +3450,10 @@ With prefix argument, changes in staging area are kept.
     ((diff)
      (magit-apply-diff-item item))
     ((stash)
-     (magit-run-git "stash" "apply" info))))
+     (apply 'magit-run-git `("stash"
+                             "apply"
+                             ,@(when current-prefix-arg '("--index"))
+                             ,info)))))
 
 (defun magit-cherry-pick-item ()
   (interactive)
@@ -3457,7 +3464,10 @@ With prefix argument, changes in staging area are kept.
     ((commit)
      (magit-apply-commit info t))
     ((stash)
-     (magit-run-git "stash" "pop" info))))
+     (apply 'magit-run-git `("stash"
+                             "pop"
+                             ,@(when current-prefix-arg '("--index"))
+                             ,info)))))
 
 (defun magit-revert-item ()
   (interactive)
@@ -3526,7 +3536,7 @@ With a non numeric prefix ARG, show all entries"
 	     "--"))))
 
 (define-minor-mode magit-log-mode
-    "Minor mode for looking at git logs
+    "Minor mode for looking at git log.
 
 \\{magit-log-mode-map}"
   :group magit
@@ -3588,7 +3598,7 @@ This is only non-nil in reflog buffers.")
 		       args)))
 
 (define-minor-mode magit-reflog-mode
-    "Minor mode for looking at git reflogs
+    "Minor mode for looking at git reflog.
 
 \\{magit-reflog-mode-map}"
   :group magit
@@ -3621,7 +3631,7 @@ This is only non-nil in reflog buffers.")
 		       "diff" (magit-diff-U-arg) args)))
 
 (define-minor-mode magit-diff-mode
-    "Minor mode for looking at git diff
+    "Minor mode for looking at a git diff.
 
 \\{magit-diff-mode-map}"
   :group magit
@@ -3724,7 +3734,7 @@ This is only meaningful in wazzup buffers.")
 		  (magit-set-section-info ref section))))))))))
 
 (define-minor-mode magit-wazzup-mode
-    "Minor mode for looking for what is on other branch.
+    "Minor mode for looking at commits that could be merged from other branches.
 
 \\{magit-wazzup-mode-map}"
   :group magit
