@@ -1,3 +1,5 @@
+(require 'assoc)
+
 (defvar magit-mode-map
   (let ((map (make-keymap)))
     (suppress-keymap map t)
@@ -28,15 +30,29 @@
     (define-key map (kbd "DEL") 'magit-show-item-or-scroll-down)
     (define-key map (kbd "C-w") 'magit-copy-item-as-kill)
     (define-key map (kbd "R") 'magit-rebase-step)
-    (define-key map (kbd "t") (lambda () (interactive) (magit-key-mode 'tagging)))
-    (define-key map (kbd "r") (lambda () (interactive) (magit-key-mode 'rewriting)))
-    (define-key map (kbd "P") (lambda () (interactive) (magit-key-mode 'pushing)))
-    (define-key map (kbd "f") 'magit-remote-update)
-    (define-key map (kbd "b") (lambda () (interactive) (magit-key-mode 'branching)))
-    (define-key map (kbd "F") (lambda () (interactive) (magit-key-mode 'pulling)))
-    (define-key map (kbd "c") 'magit-log-edit)
-    (define-key map (kbd "l") (lambda () (interactive) (magit-key-mode 'logging)))
+    (define-key map (kbd "t") (lambda ()
+                                (interactive)
+                                (magit-key-mode 'tagging)))
+    (define-key map (kbd "r") (lambda ()
+                                (interactive)
+                                (magit-key-mode 'rewriting)))
+    (define-key map (kbd "P") (lambda ()
+                                (interactive)
+                                (magit-key-mode 'pushing)))
+    (define-key map (kbd "f") (lambda ()
+                                (interactive)
+                                (magit-key-mode 'fetching)))
+    (define-key map (kbd "b") (lambda ()
+                                (interactive)
+                                (magit-key-mode 'branching)))
+    (define-key map (kbd "F") (lambda ()
+                                (interactive)
+                                (magit-key-mode 'pulling)))
+    (define-key map (kbd "l") (lambda ()
+                                (interactive)
+                                (magit-key-mode 'logging)))
     (define-key map (kbd "$") 'magit-display-process)
+    (define-key map (kbd "c") 'magit-log-edit)
     (define-key map (kbd "E") 'magit-interactive-rebase)
     (define-key map (kbd "q") 'quit-window)
     map))
@@ -66,16 +82,20 @@
     (define-key map (kbd "a") 'magit-apply-item)
     (define-key map (kbd "A") 'magit-cherry-pick-item)
     (define-key map (kbd "v") 'magit-revert-item)
-    (define-key map (kbd "b") (lambda () (interactive) (magit-key-mode 'branching)))
-    (define-key map (kbd "m") 'magit-manual-merge)
-    (define-key map (kbd "M") 'magit-automatic-merge)
+    (define-key map (kbd "b") (lambda ()
+                                (interactive)
+                                (magit-key-mode 'branching)))
+    (define-key map (kbd "m") (lambda ()
+                                (interactive)
+                                (magit-key-mode 'merging)))
     (define-key map (kbd "k") 'magit-discard-item)
     (define-key map (kbd "e") 'magit-interactive-resolve-item)
     (define-key map (kbd "C") 'magit-add-log)
     (define-key map (kbd "x") 'magit-reset-head)
     (define-key map (kbd "X") 'magit-reset-working-tree)
-    (define-key map (kbd "z") 'magit-stash)
-    (define-key map (kbd "Z") 'magit-stash-snapshot)
+    (define-key map (kbd "z") (lambda ()
+                                (interactive)
+                                (magit-key-mode 'stashing)))
     map))
 
 (defvar magit-stash-mode-map
@@ -95,15 +115,19 @@
     (define-key map (kbd "d") 'magit-diff-working-tree)
     (define-key map (kbd "D") 'magit-diff)
     (define-key map (kbd "a") 'magit-apply-item)
-    (define-key map (kbd "s") 'magit-log-grep)
     (define-key map (kbd "A") 'magit-cherry-pick-item)
     (define-key map (kbd "v") 'magit-revert-item)
-    (define-key map (kbd "b") (lambda () (interactive) (magit-key-mode 'branching)))
-    (define-key map (kbd "m") 'magit-manual-merge)
-    (define-key map (kbd "M") 'magit-automatic-merge)
+    (define-key map (kbd "b") (lambda ()
+                                (interactive)
+                                (magit-key-mode 'branching)))
+    (define-key map (kbd "m") (lambda ()
+                                (interactive)
+                                (magit-key-mode 'merging)))
     (define-key map (kbd "x") 'magit-reset-head)
     (define-key map (kbd "e") 'magit-log-show-more-entries)
-    (define-key map (kbd "l") (lambda () (interactive) (magit-key-mode 'logging)))
+    (define-key map (kbd "l") (lambda ()
+                                (interactive)
+                                (magit-key-mode 'logging)))
     map))
 
 (defvar magit-reflog-mode-map
@@ -137,9 +161,12 @@
     (define-key map (kbd "a") 'magit-apply-item)
     (define-key map (kbd "A") 'magit-cherry-pick-item)
     (define-key map (kbd "v") 'magit-revert-item)
-    (define-key map (kbd "b") (lambda () (interactive) (magit-key-mode 'branching)))
-    (define-key map (kbd "m") 'magit-manual-merge)
-    (define-key map (kbd "M") 'magit-automatic-merge)
+    (define-key map (kbd "b") (lambda ()
+                                (interactive)
+                                (magit-key-mode 'branching)))
+    (define-key map (kbd "m") (lambda ()
+                                (interactive)
+                                (magit-key-mode 'merging)))
     (define-key map (kbd "x") 'magit-reset-head)
     (define-key map (kbd "i") 'magit-ignore-item)
     map))
@@ -168,6 +195,22 @@
       ("=a" "Author" "--author" read-from-minibuffer)
       ("=g" "Grep" "--grep" read-from-minibuffer)))
 
+    (committing
+     (actions
+      ("c" "Commit" magit-log-edit-commit))
+     (switches
+      ("-s" "Signoff" "--signoff")
+      ("-am" "Amend" "--amend")
+      ("-al" "All" "--all"))
+      ("-e" "Allow empty" "--allow-empty")
+     (arguments
+      ("=au" "Author" "--author" read-from-minibuffer)))
+
+    (fetching
+     (actions
+      ("f" "Fetch" magit-fetch)
+      ("r" "Remote update" magit-remote-update)))
+
     (pushing
      (actions
       ("p" "Push" magit-push))
@@ -194,6 +237,23 @@
       ("T" "Annotated" magit-annotated-tag))
      (switches
       ("-f" "Force" "-f")))
+
+    (stashing
+     (actions
+      ("s" "Save" magit-stash)
+      ("S" "Snapshot" magit-stash-snapshot))
+     (switches
+      ("-k" "Keep index" "--keep-index")))
+
+    (merging
+     (actions
+      ("m" "Manual" magit-manual-merge)
+      ("M" "Automatic" magit-automatic-merge))
+     (switches
+      ("-n" "No fast-forward" "--no-ff")
+      ("-sq" "Squash" "--sqaush"))
+     (arguments
+      ("-st" "Strategy" "--strategy" read-from-minibuffer)))
 
     (rewriting
      (actions
