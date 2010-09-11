@@ -1,176 +1,5 @@
 (require 'assoc)
 
-(defvar magit-mode-map
-  (let ((map (make-keymap)))
-    (suppress-keymap map t)
-    (define-key map (kbd "n") 'magit-goto-next-section)
-    (define-key map (kbd "p") 'magit-goto-previous-section)
-    (define-key map (kbd "TAB") 'magit-toggle-section)
-    (define-key map (kbd "<backtab>") 'magit-expand-collapse-section)
-    (define-key map (kbd "1") 'magit-show-level-1)
-    (define-key map (kbd "2") 'magit-show-level-2)
-    (define-key map (kbd "3") 'magit-show-level-3)
-    (define-key map (kbd "4") 'magit-show-level-4)
-    (define-key map (kbd "M-1") 'magit-show-level-1-all)
-    (define-key map (kbd "M-2") 'magit-show-level-2-all)
-    (define-key map (kbd "M-3") 'magit-show-level-3-all)
-    (define-key map (kbd "M-4") 'magit-show-level-4-all)
-    (define-key map (kbd "M-h") 'magit-show-only-files)
-    (define-key map (kbd "M-H") 'magit-show-only-files-all)
-    (define-key map (kbd "M-s") 'magit-show-level-4)
-    (define-key map (kbd "M-S") 'magit-show-level-4-all)
-    (define-key map (kbd "<M-left>") 'magit-goto-parent-section)
-    (define-key map (kbd "g") 'magit-refresh)
-    (define-key map (kbd "G") 'magit-refresh-all)
-    (define-key map (kbd "?") 'magit-describe-item)
-    (define-key map (kbd "!") 'magit-shell-command)
-    (define-key map (kbd ":") 'magit-git-command)
-    (define-key map (kbd "RET") 'magit-visit-item)
-    (define-key map (kbd "SPC") 'magit-show-item-or-scroll-up)
-    (define-key map (kbd "DEL") 'magit-show-item-or-scroll-down)
-    (define-key map (kbd "C-w") 'magit-copy-item-as-kill)
-    (define-key map (kbd "R") 'magit-rebase-step)
-    (define-key map (kbd "t") (lambda ()
-                                (interactive)
-                                (magit-key-mode 'tagging)))
-    (define-key map (kbd "r") (lambda ()
-                                (interactive)
-                                (magit-key-mode 'rewriting)))
-    (define-key map (kbd "P") (lambda ()
-                                (interactive)
-                                (magit-key-mode 'pushing)))
-    (define-key map (kbd "f") (lambda ()
-                                (interactive)
-                                (magit-key-mode 'fetching)))
-    (define-key map (kbd "b") (lambda ()
-                                (interactive)
-                                (magit-key-mode 'branching)))
-    (define-key map (kbd "F") (lambda ()
-                                (interactive)
-                                (magit-key-mode 'pulling)))
-    (define-key map (kbd "l") (lambda ()
-                                (interactive)
-                                (magit-key-mode 'logging)))
-    (define-key map (kbd "$") 'magit-display-process)
-    (define-key map (kbd "c") 'magit-log-edit)
-    (define-key map (kbd "E") 'magit-interactive-rebase)
-    (define-key map (kbd "q") 'quit-window)
-    map))
-
-(defvar magit-commit-mode-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "a") 'magit-apply-item)
-    (define-key map (kbd "A") 'magit-cherry-pick-item)
-    (define-key map (kbd "v") 'magit-revert-item)
-    map))
-
-(defvar magit-status-mode-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "-") 'magit-diff-smaller-hunks)
-    (define-key map (kbd "+") 'magit-diff-larger-hunks)
-    (define-key map (kbd "0") 'magit-diff-default-hunks)
-    (define-key map (kbd "s") 'magit-stage-item)
-    (define-key map (kbd "S") 'magit-stage-all)
-    (define-key map (kbd "u") 'magit-unstage-item)
-    (define-key map (kbd "U") 'magit-unstage-all)
-    (define-key map (kbd "i") 'magit-ignore-item)
-    (define-key map (kbd "I") 'magit-ignore-item-locally)
-    (define-key map (kbd ".") 'magit-mark-item)
-    (define-key map (kbd "=") 'magit-diff-with-mark)
-    (define-key map (kbd "d") 'magit-diff-working-tree)
-    (define-key map (kbd "D") 'magit-diff)
-    (define-key map (kbd "a") 'magit-apply-item)
-    (define-key map (kbd "A") 'magit-cherry-pick-item)
-    (define-key map (kbd "v") 'magit-revert-item)
-    (define-key map (kbd "b") (lambda ()
-                                (interactive)
-                                (magit-key-mode 'branching)))
-    (define-key map (kbd "m") (lambda ()
-                                (interactive)
-                                (magit-key-mode 'merging)))
-    (define-key map (kbd "k") 'magit-discard-item)
-    (define-key map (kbd "e") 'magit-interactive-resolve-item)
-    (define-key map (kbd "C") 'magit-add-log)
-    (define-key map (kbd "x") 'magit-reset-head)
-    (define-key map (kbd "X") 'magit-reset-working-tree)
-    (define-key map (kbd "z") (lambda ()
-                                (interactive)
-                                (magit-key-mode 'stashing)))
-    map))
-
-(defvar magit-stash-mode-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "-") 'magit-diff-smaller-hunks)
-    (define-key map (kbd "+") 'magit-diff-larger-hunks)
-    (define-key map (kbd "0") 'magit-diff-default-hunks)
-    (define-key map (kbd "a") 'magit-apply-item)
-    (define-key map (kbd "A") 'magit-cherry-pick-item)
-    (define-key map (kbd "v") 'magit-revert-item)
-    map))
-
-(defvar magit-log-mode-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map (kbd ".") 'magit-mark-item)
-    (define-key map (kbd "=") 'magit-diff-with-mark)
-    (define-key map (kbd "d") 'magit-diff-working-tree)
-    (define-key map (kbd "D") 'magit-diff)
-    (define-key map (kbd "a") 'magit-apply-item)
-    (define-key map (kbd "A") 'magit-cherry-pick-item)
-    (define-key map (kbd "v") 'magit-revert-item)
-    (define-key map (kbd "b") (lambda ()
-                                (interactive)
-                                (magit-key-mode 'branching)))
-    (define-key map (kbd "m") (lambda ()
-                                (interactive)
-                                (magit-key-mode 'merging)))
-    (define-key map (kbd "x") 'magit-reset-head)
-    (define-key map (kbd "e") 'magit-log-show-more-entries)
-    (define-key map (kbd "l") (lambda ()
-                                (interactive)
-                                (magit-key-mode 'logging)))
-    map))
-
-(defvar magit-reflog-mode-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map (kbd ".") 'magit-mark-item)
-    (define-key map (kbd "=") 'magit-diff-with-mark)
-    (define-key map (kbd "d") 'magit-diff-working-tree)
-    (define-key map (kbd "D") 'magit-diff)
-    (define-key map (kbd "a") 'magit-apply-item)
-    (define-key map (kbd "A") 'magit-cherry-pick-item)
-    (define-key map (kbd "v") 'magit-revert-item)
-    (define-key map (kbd "x") 'magit-reset-head)
-    map))
-
-(defvar magit-diff-mode-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "-") 'magit-diff-smaller-hunks)
-    (define-key map (kbd "+") 'magit-diff-larger-hunks)
-    (define-key map (kbd "0") 'magit-diff-default-hunks)
-    (define-key map (kbd "a") 'magit-apply-item)
-    (define-key map (kbd "A") 'magit-cherry-pick-item)
-    (define-key map (kbd "v") 'magit-revert-item)
-    map))
-
-(defvar magit-wazzup-mode-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map (kbd ".") 'magit-mark-item)
-    (define-key map (kbd "=") 'magit-diff-with-mark)
-    (define-key map (kbd "d") 'magit-diff-working-tree)
-    (define-key map (kbd "D") 'magit-diff)
-    (define-key map (kbd "a") 'magit-apply-item)
-    (define-key map (kbd "A") 'magit-cherry-pick-item)
-    (define-key map (kbd "v") 'magit-revert-item)
-    (define-key map (kbd "b") (lambda ()
-                                (interactive)
-                                (magit-key-mode 'branching)))
-    (define-key map (kbd "m") (lambda ()
-                                (interactive)
-                                (magit-key-mode 'merging)))
-    (define-key map (kbd "x") 'magit-reset-head)
-    (define-key map (kbd "i") 'magit-ignore-item)
-    map))
-
 (defvar magit-key-mode-key-maps '()
   "This will be filled lazily with proper `define-key' built
   keymaps as they're reqeusted.")
@@ -194,6 +23,11 @@
       ("=b" "Branches" "--branches" read-from-minibuffer)
       ("=a" "Author" "--author" read-from-minibuffer)
       ("=g" "Grep" "--grep" read-from-minibuffer)))
+
+    (running
+     (actions
+      ("!" "Command from root" magit-shell-command)
+      (":" "Git command" magit-git-command)))
 
     (committing
      (actions
@@ -247,11 +81,11 @@
 
     (merging
      (actions
-      ("m" "Manual" magit-manual-merge)
-      ("M" "Automatic" magit-automatic-merge))
+      ("m" "Merge" magit-merge))
      (switches
-      ("-n" "No fast-forward" "--no-ff")
-      ("-sq" "Squash" "--sqaush"))
+      ("-nf" "No fast-forward" "--no-ff")
+      ("-nc" "No commit" "--no-commit")
+      ("-sq" "Squash" "--squash"))
      (arguments
       ("-st" "Strategy" "--strategy" read-from-minibuffer)))
 
@@ -267,7 +101,41 @@
   modify this make sure you reset `magit-key-mode-key-maps' to
   nil.")
 
+(defun magit-key-mode-add-group (name)
+  "Add a new group to `magit-key-mode-key-maps'."
+  (unless (assoc name magit-key-mode-groups)
+    (push (list name '(actions)) magit-key-mode-groups)))
+
+(defun magit-key-mode-update-group (for-group thing &rest args)
+  "Abstraction for setting values in `magit-key-mode-key-maps'."
+  (let* ((options (magit-key-mode-options-for-group for-group))
+         (things (assoc thing options)))
+    (if (cdr things)
+        (setcdr (cdr things) (cons args (cddr things)))
+      (setcdr things (list args)))
+    (setq magit-key-mode-key-maps nil)
+    things))
+
+(defun magit-key-mode-insert-argument (for-group key desc arg read-func)
+  "Add a new binding (KEY) in FOR-GROUP which will use READ-FUNC
+to receive input to apply to argument ARG git is run. DESC should
+be a brief description of the binding."
+  (magit-key-mode-update-group for-group 'arguments key desc arg read-func))
+
+(defun magit-key-mode-insert-switch (for-group key desc switch)
+  "Add a new binding (KEY) in FOR-GROUP which will add SWITCH to git's
+commandline when it runs. DESC should be a brief description of
+the binding."
+  (magit-key-mode-update-group for-group 'switches key desc switch))
+
+(defun magit-key-mode-insert-action (for-group key desc func)
+  "Add a new binding (KEY) in FOR-GROUP which will run command
+FUNC. DESC should be a brief description of the binding."
+  (magit-key-mode-update-group for-group 'actions key desc func))
+
 (defun magit-key-mode-options-for-group (for-group)
+  "Retrieve the options (switches, commands and arguments) for
+the group FOR-GROUP."
   (or (cdr (assoc for-group magit-key-mode-groups))
       (error "Unknown group '%s'" for-group)))
 
@@ -365,10 +233,10 @@ put it in magit-key-mode-key-maps for fast lookup."
     (other-window 1)
     (switch-to-buffer buf)
     (kill-all-local-variables)
-    (set (make-variable-buffer-local
+    (set (make-local-variable
           'magit-key-mode-current-options)
          original-opts)
-    (set (make-variable-buffer-local
+    (set (make-local-variable
           'magit-key-mode-current-args)
          (make-hash-table))
     (magit-key-mode-redraw for-group)))
@@ -382,8 +250,10 @@ put it in magit-key-mode-key-maps for fast lookup."
      (or (cdr (assoc for-group magit-key-mode-key-maps))
          (magit-key-mode-build-keymap for-group)))
     (magit-key-mode-draw for-group)
+    (delete-trailing-whitespace)
     (setq mode-name "magit-key-mode" major-mode 'magit-key-mode))
   (setq buffer-read-only t)
+  (goto-char (point-min))
   (fit-window-to-buffer))
 
 (defun magit-key-mode-draw-header (header)
@@ -462,5 +332,19 @@ put it in magit-key-mode-key-maps for fast lookup."
     (magit-key-mode-draw-actions actions)
     (magit-key-mode-draw-switches switches)
     (magit-key-mode-draw-args arguments)))
+
+(defun magit-key-mode-generate (sym)
+  "Generate the key-group menu for SYM"
+  (let ((opts (magit-key-mode-options-for-group sym)))
+    (eval
+     `(defun ,(intern  (concat "magit-key-mode-popup-" (symbol-name sym))) nil
+        ,(concat "Key menu for " (symbol-name sym))
+        (interactive)
+        (magit-key-mode (quote ,sym))))))
+
+;; create the interactive functions for the key mode popups
+(mapc (lambda (g)
+        (magit-key-mode-generate (car g)))
+      magit-key-mode-groups)
 
 (provide 'magit-key-mode)

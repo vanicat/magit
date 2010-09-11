@@ -66,11 +66,13 @@
 
 ;;; Code:
 
+;; magit core
+(require 'magit-key-mode)
+
 (eval-when-compile (require 'cl))
 (require 'log-edit)
 (require 'easymenu)
 (require 'diff-mode)
-(require 'magit-key-mode)
 
 ;;; Code:
 (defgroup magit nil
@@ -352,6 +354,147 @@ Many Magit faces inherit from this one by default."
      :foreground "orange"))
   "Face for selected options on magit's menu"
   :group 'magit)
+
+(defvar magit-mode-map
+  (let ((map (make-keymap)))
+    (suppress-keymap map t)
+    (define-key map (kbd "n") 'magit-goto-next-section)
+    (define-key map (kbd "p") 'magit-goto-previous-section)
+    (define-key map (kbd "TAB") 'magit-toggle-section)
+    (define-key map (kbd "<backtab>") 'magit-expand-collapse-section)
+    (define-key map (kbd "1") 'magit-show-level-1)
+    (define-key map (kbd "2") 'magit-show-level-2)
+    (define-key map (kbd "3") 'magit-show-level-3)
+    (define-key map (kbd "4") 'magit-show-level-4)
+    (define-key map (kbd "M-1") 'magit-show-level-1-all)
+    (define-key map (kbd "M-2") 'magit-show-level-2-all)
+    (define-key map (kbd "M-3") 'magit-show-level-3-all)
+    (define-key map (kbd "M-4") 'magit-show-level-4-all)
+    (define-key map (kbd "M-h") 'magit-show-only-files)
+    (define-key map (kbd "M-H") 'magit-show-only-files-all)
+    (define-key map (kbd "M-s") 'magit-show-level-4)
+    (define-key map (kbd "M-S") 'magit-show-level-4-all)
+    (define-key map (kbd "<M-left>") 'magit-goto-parent-section)
+    (define-key map (kbd "g") 'magit-refresh)
+    (define-key map (kbd "G") 'magit-refresh-all)
+    (define-key map (kbd "?") 'magit-describe-item)
+    (define-key map (kbd "!") 'magit-key-mode-popup-running)
+    (define-key map (kbd ":") 'magit-git-command)
+    (define-key map (kbd "RET") 'magit-visit-item)
+    (define-key map (kbd "SPC") 'magit-show-item-or-scroll-up)
+    (define-key map (kbd "DEL") 'magit-show-item-or-scroll-down)
+    (define-key map (kbd "C-w") 'magit-copy-item-as-kill)
+    (define-key map (kbd "R") 'magit-rebase-step)
+    (define-key map (kbd "t") 'magit-key-mode-popup-tagging)
+    (define-key map (kbd "r") 'magit-key-mode-popup-rewriting)
+    (define-key map (kbd "P") 'magit-key-mode-popup-pushing)
+    (define-key map (kbd "f") 'magit-key-mode-popup-fetching)
+    (define-key map (kbd "b") 'magit-key-mode-popup-branching)
+    (define-key map (kbd "F") 'magit-key-mode-popup-pulling)
+    (define-key map (kbd "l") 'magit-key-mode-popup-logging)
+    (define-key map (kbd "$") 'magit-display-process)
+    (define-key map (kbd "c") 'magit-log-edit)
+    (define-key map (kbd "E") 'magit-interactive-rebase)
+    (define-key map (kbd "q") 'quit-window)
+    map))
+
+(defvar magit-commit-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "a") 'magit-apply-item)
+    (define-key map (kbd "A") 'magit-cherry-pick-item)
+    (define-key map (kbd "v") 'magit-revert-item)
+    map))
+
+(defvar magit-status-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "-") 'magit-diff-smaller-hunks)
+    (define-key map (kbd "+") 'magit-diff-larger-hunks)
+    (define-key map (kbd "0") 'magit-diff-default-hunks)
+    (define-key map (kbd "s") 'magit-stage-item)
+    (define-key map (kbd "S") 'magit-stage-all)
+    (define-key map (kbd "u") 'magit-unstage-item)
+    (define-key map (kbd "U") 'magit-unstage-all)
+    (define-key map (kbd "i") 'magit-ignore-item)
+    (define-key map (kbd "I") 'magit-ignore-item-locally)
+    (define-key map (kbd ".") 'magit-mark-item)
+    (define-key map (kbd "=") 'magit-diff-with-mark)
+    (define-key map (kbd "d") 'magit-diff-working-tree)
+    (define-key map (kbd "D") 'magit-diff)
+    (define-key map (kbd "a") 'magit-apply-item)
+    (define-key map (kbd "A") 'magit-cherry-pick-item)
+    (define-key map (kbd "v") 'magit-revert-item)
+    (define-key map (kbd "b") 'magit-key-mode-popup-branching)
+    (define-key map (kbd "m") 'magit-key-mode-popup-merging)
+    (define-key map (kbd "k") 'magit-discard-item)
+    (define-key map (kbd "e") 'magit-interactive-resolve-item)
+    (define-key map (kbd "C") 'magit-add-log)
+    (define-key map (kbd "x") 'magit-reset-head)
+    (define-key map (kbd "X") 'magit-reset-working-tree)
+    (define-key map (kbd "z") 'magit-key-mode-popup-stashing)
+    map))
+
+(defvar magit-stash-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "-") 'magit-diff-smaller-hunks)
+    (define-key map (kbd "+") 'magit-diff-larger-hunks)
+    (define-key map (kbd "0") 'magit-diff-default-hunks)
+    (define-key map (kbd "a") 'magit-apply-item)
+    (define-key map (kbd "A") 'magit-cherry-pick-item)
+    (define-key map (kbd "v") 'magit-revert-item)
+    map))
+
+(defvar magit-log-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd ".") 'magit-mark-item)
+    (define-key map (kbd "=") 'magit-diff-with-mark)
+    (define-key map (kbd "d") 'magit-diff-working-tree)
+    (define-key map (kbd "D") 'magit-diff)
+    (define-key map (kbd "a") 'magit-apply-item)
+    (define-key map (kbd "A") 'magit-cherry-pick-item)
+    (define-key map (kbd "v") 'magit-revert-item)
+    (define-key map (kbd "b") 'magit-key-mode-popup-branching)
+    (define-key map (kbd "m") 'magit-key-mode-popup-merging)
+    (define-key map (kbd "x") 'magit-reset-head)
+    (define-key map (kbd "e") 'magit-log-show-more-entries)
+    (define-key map (kbd "l") 'magit-key-mode-popup-logging)
+    map))
+
+(defvar magit-reflog-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd ".") 'magit-mark-item)
+    (define-key map (kbd "=") 'magit-diff-with-mark)
+    (define-key map (kbd "d") 'magit-diff-working-tree)
+    (define-key map (kbd "D") 'magit-diff)
+    (define-key map (kbd "a") 'magit-apply-item)
+    (define-key map (kbd "A") 'magit-cherry-pick-item)
+    (define-key map (kbd "v") 'magit-revert-item)
+    (define-key map (kbd "x") 'magit-reset-head)
+    map))
+
+(defvar magit-diff-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "-") 'magit-diff-smaller-hunks)
+    (define-key map (kbd "+") 'magit-diff-larger-hunks)
+    (define-key map (kbd "0") 'magit-diff-default-hunks)
+    (define-key map (kbd "a") 'magit-apply-item)
+    (define-key map (kbd "A") 'magit-cherry-pick-item)
+    (define-key map (kbd "v") 'magit-revert-item)
+    map))
+
+(defvar magit-wazzup-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd ".") 'magit-mark-item)
+    (define-key map (kbd "=") 'magit-diff-with-mark)
+    (define-key map (kbd "d") 'magit-diff-working-tree)
+    (define-key map (kbd "D") 'magit-diff)
+    (define-key map (kbd "a") 'magit-apply-item)
+    (define-key map (kbd "A") 'magit-cherry-pick-item)
+    (define-key map (kbd "v") 'magit-revert-item)
+    (define-key map (kbd "b") 'magit-key-mode-popup-branching)
+    (define-key map (kbd "m") 'magit-key-mode-popup-merging)
+    (define-key map (kbd "x") 'magit-reset-head)
+    (define-key map (kbd "i") 'magit-ignore-item)
+    map))
 
 ;;; Macros
 
@@ -1633,7 +1776,6 @@ FUNC should leave point at the end of the modified region"
     "---"
     ["Branch..." magit-checkout t]
     ["Merge" magit-automatic-merge t]
-    ["Merge (no commit)" magit-manual-merge t]
     ["Interactive resolve" magit-interactive-resolve-item t]
     ["Rebase" magit-rebase-step t]
     ("Rewrite"
@@ -2336,9 +2478,7 @@ insert a line to tell how to insert more of them"
 		       "-p" commit)))
 
 (define-minor-mode magit-commit-mode
-    "Minor mode to view a git commit.
-
-\\{magit-commit-mode-map}"
+    "Minor mode to view git commit"
   :group magit
   :init-value ()
   :lighter ()
@@ -2513,9 +2653,7 @@ insert a line to tell how to insert more of them"
 	(magit-run* (list "git" "init"))))))
 
 (define-minor-mode magit-status-mode
-    "Minor mode for looking at git status.
-
-\\{magit-status-mode-map}"
+    "Minor mode for looking at git status"
   :group magit
   :init-value ()
   :lighter ()
@@ -2691,25 +2829,19 @@ If the branch is the current one, offers to switch to `master' first.
     ((commit) (substring info 0 8))
     ((wazzup) info)))
 
-(defun magit-manual-merge (revision)
+(defun magit-merge (revision)
   "Merge REVISION into the current 'HEAD'; leave changes uncommitted.
 With a prefix-arg, the merge will be squashed.
 \('git merge --no-commit [--squash|--no-ff] REVISION')."
   (interactive
-   (list (magit-read-rev (concat "Manually merge"
-				 (when current-prefix-arg
-				   " (squashed)"))
-			 (magit-guess-branch))))
+   (list (magit-read-rev (concat
+                          "Merge"
+                          (magit-guess-branch)))))
   (if revision
-      (magit-run-git "merge" "--no-commit"
-		     (magit-rev-to-git revision))))
-
-(magit-define-command automatic-merge (revision)
-  "Merge REVISION into the current 'HEAD'; commit unless merge fails.
-\('git merge REVISION')."
-  (interactive (list (magit-read-rev "Merge" (magit-guess-branch))))
-  (if revision
-      (magit-run-git "merge" (magit-rev-to-git revision))))
+      (apply 'magit-run-git
+             "merge"
+             (magit-rev-to-git revision)
+             magit-custom-options)))
 
 ;;; Rebasing
 
@@ -2997,10 +3129,6 @@ typing and automatically refreshes the status buffer."
 
 (defvar magit-log-edit-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "C-c C-c")
-      (lambda ()
-        (interactive)
-        (magit-key-mode 'committing)))
     (define-key map (kbd "M-p") 'log-edit-previous-comment)
     (define-key map (kbd "M-n") 'log-edit-next-comment)
     (define-key map (kbd "C-c C-k") 'magit-log-edit-cancel-log-message)
@@ -3043,6 +3171,17 @@ Prefix arg means justify as well."
             (not (equal comment (ring-ref log-edit-comment-ring 0))))
     (ring-insert log-edit-comment-ring comment)))
 
+(defun magit-log-edit-apply-tag (name rev)
+  (let ((commit-buf (current-buffer)))
+    (with-current-buffer (magit-find-buffer 'status default-directory)
+      (magit-run-git-with-input (current-buffer) "tag" name "-a" "-F" "-" rev))
+    (erase-buffer)
+    (bury-buffer)
+    (magit-update-vc-modeline default-directory)
+    (when magit-pre-log-edit-window-configuration
+      (set-window-configuration magit-pre-log-edit-window-configuration)
+      (setq magit-pre-log-edit-window-configuration nil))))
+
 (defun magit-log-edit-commit ()
   "Finish edits and create new commit object.
 \('git commit ...')"
@@ -3080,14 +3219,27 @@ Prefix arg means justify as well."
       (set-window-configuration magit-pre-log-edit-window-configuration)
       (setq magit-pre-log-edit-window-configuration nil))))
 
-(defun magit-pop-to-log-edit (operation)
+(defun magit-pop-to-log-edit (operation &optional options)
   (let ((dir default-directory)
 	(buf (get-buffer-create magit-log-edit-buffer-name)))
     (setq magit-pre-log-edit-window-configuration
 	  (current-window-configuration))
     (pop-to-buffer buf)
-    (when (file-exists-p ".git/MERGE_MSG")
-      (insert-file-contents ".git/MERGE_MSG"))
+    (case operation
+      ('tagging
+       (let ((name (cdr (assoc 'name options)))
+             (rev (cdr (assoc 'rev options))))
+         (setq header-line-format
+               (format "For tag %s on %s" name rev))
+         (define-key magit-log-edit-mode-map (kbd "C-c C-c")
+           `(lambda ()
+              (interactive)
+              (magit-log-edit-apply-tag ,name ,rev)))))
+      ('committing
+       (when (file-exists-p ".git/MERGE_MSG")
+         (insert-file-contents ".git/MERGE_MSG"))
+       (define-key magit-log-edit-mode-map (kbd "C-c C-c")
+         'magit-key-mode-popup-committing)))
     (setq default-directory dir)
     (magit-log-edit-mode)
     (message "Type C-c C-c to %s (C-c C-k to cancel)." operation)))
@@ -3098,7 +3250,7 @@ Prefix arg means justify as well."
          (if (y-or-n-p "Rebase in progress.  Continue it? ")
              (magit-run-git "rebase" "--continue")))
         (t
-         (magit-pop-to-log-edit 'commit))))
+         (magit-pop-to-log-edit 'committing))))
 
 (defun magit-add-log ()
   (interactive)
@@ -3163,16 +3315,15 @@ Prefix arg means justify as well."
     (magit-read-rev "Place tag on: " (or (magit-default-rev) "HEAD"))))
   (magit-run-git "tag" name rev))
 
-;; (magit-define-command annotated-tag (name rev)
-;;   "Start composing an annotated tag with the given NAME.
-;; Tag will point to the current 'HEAD'."
-;;   (interactive
-;;    (list
-;;     (read-string "Tag name: ")
-;;     (magit-read-rev "Place tag on: " (or (magit-default-rev) "HEAD"))))
-;;   (magit-log-edit-set-field 'tag-name name)
-;;   (magit-log-edit-set-field 'tag-rev rev)
-;;   (magit-pop-to-log-edit "tag"))
+(magit-define-command annotated-tag (name rev)
+  "Start composing an annotated tag with the given NAME.
+Tag will point to the current 'HEAD'."
+  (interactive
+   (list
+    (read-string "Tag name: ")
+    (magit-read-rev "Place tag on: " (or (magit-default-rev) "HEAD"))))
+  (magit-pop-to-log-edit 'tagging (list (cons 'name name)
+                                        (cons 'rev rev))))
 
 ;;; Stashing
 
@@ -3226,9 +3377,7 @@ With prefix argument, changes in staging area are kept.
 (defvar magit-currently-shown-stash nil)
 
 (define-minor-mode magit-stash-mode
-    "Minor mode for looking at a git stash.
-
-\\{magit-stash-mode-map}"
+    "Minor mode for looking at git status"
   :group magit
   :init-value ()
   :lighter ()
@@ -3291,10 +3440,7 @@ With prefix argument, changes in staging area are kept.
 	      (magit-format-commit commit "Reverting \"%s\"")))
 	    (t
 	     (magit-log-edit-append
-	      (magit-format-commit commit "%s%n%n%b"))
-	     (magit-log-edit-set-field
-	      'author
-	      (magit-format-commit commit "%an <%ae>, %ai")))))
+	      (magit-format-commit commit "%s%n%n%b")))))
     success))
 
 (defun magit-apply-item ()
@@ -3314,10 +3460,7 @@ With prefix argument, changes in staging area are kept.
     ((diff)
      (magit-apply-diff-item item))
     ((stash)
-     (apply 'magit-run-git `("stash"
-                             "apply"
-                             ,@(when current-prefix-arg '("--index"))
-                             ,info)))))
+     (magit-run-git "stash" "apply" info))))
 
 (defun magit-cherry-pick-item ()
   (interactive)
@@ -3328,10 +3471,7 @@ With prefix argument, changes in staging area are kept.
     ((commit)
      (magit-apply-commit info t))
     ((stash)
-     (apply 'magit-run-git `("stash"
-                             "pop"
-                             ,@(when current-prefix-arg '("--index"))
-                             ,info)))))
+     (magit-run-git "stash" "pop" info))))
 
 (defun magit-revert-item ()
   (interactive)
@@ -3400,9 +3540,7 @@ With a non numeric prefix ARG, show all entries"
 	     "--"))))
 
 (define-minor-mode magit-log-mode
-    "Minor mode for looking at git log.
-
-\\{magit-log-mode-map}"
+    "Minor mode for looking at git status"
   :group magit
   :init-value ()
   :lighter ()
@@ -3462,9 +3600,7 @@ This is only non-nil in reflog buffers.")
 		       args)))
 
 (define-minor-mode magit-reflog-mode
-    "Minor mode for looking at git reflog.
-
-\\{magit-reflog-mode-map}"
+    "Minor mode for looking at git status"
   :group magit
   :init-value ()
   :lighter ()
@@ -3495,9 +3631,7 @@ This is only non-nil in reflog buffers.")
 		       "diff" (magit-diff-U-arg) args)))
 
 (define-minor-mode magit-diff-mode
-    "Minor mode for looking at a git diff.
-
-\\{magit-diff-mode-map}"
+    "Minor mode for looking at git status"
   :group magit
   :init-value ()
   :lighter ()
@@ -3598,9 +3732,7 @@ This is only meaningful in wazzup buffers.")
 		  (magit-set-section-info ref section))))))))))
 
 (define-minor-mode magit-wazzup-mode
-    "Minor mode for looking at commits that could be merged from other branches.
-
-\\{magit-wazzup-mode-map}"
+    "Minor mode for looking at git status"
   :group magit
   :init-value ()
   :lighter ()
@@ -3874,18 +4006,6 @@ With prefix force the removal even it it hasn't been merged."
     (save-excursion
       (apply 'magit-run-git (remq nil args))
       (magit-show-branches))))
-
-(defun magit-branches-window-manual-merge ()
-  "Merge the branch at point manually."
-  (interactive)
-  (magit-manual-merge (magit--branch-name-at-point))
-  (magit-show-branches))
-
-(defun magit-branches-window-automatic-merge ()
-  "Merge the branch at point automatically."
-  (interactive)
-  (magit-automatic-merge (magit--branch-name-at-point))
-  (magit-show-branches))
 
 (defvar magit-branches-buffer-name "*magit-branches*")
 
