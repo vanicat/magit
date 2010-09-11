@@ -1567,7 +1567,6 @@ FUNC should leave point at the end of the modified region"
   (if (and magit-process
 	   (get-buffer magit-process-buffer-name))
       (error "Git is already running"))
-  (setq cmd-and-args (delete nil cmd-and-args))
   (let ((cmd (car cmd-and-args))
 	(args (cdr cmd-and-args))
 	(dir default-directory)
@@ -2809,8 +2808,8 @@ If the branch is the current one, offers to switch to `master' first.
 	(magit-checkout "master")
       (setq branch nil)))
   (when branch
-    (magit-run-git "branch" "-d" magit-custom-options
-		   (magit-rev-to-git branch))))
+    (magit-run-git "branch" "-d" (append magit-custom-options
+					 (magit-rev-to-git branch)))))
 
 (defun magit-move-branch (old new)
   "Renames or moves a branch.
