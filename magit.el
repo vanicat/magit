@@ -1,9 +1,12 @@
 ;;; magit.el -- control Git from Emacs.
 
+;; Copyright (C) 2010 Aaron Culich.
 ;; Copyright (C) 2010 Alan Falloon.
 ;; Copyright (C) 2008, 2010 Alex Ott.
 ;; Copyright (C) 2008, 2009, 2010 Alexey Voinov.
 ;; Copyright (C) 2010 Ben Walton.
+;; Copyright (C) 2010 Chris Bernard.
+;; Copyright (C) 2010 Christian Kluge.
 ;; Copyright (C) 2008 Daniel Farina.
 ;; Copyright (C) 2010 David Abrahams.
 ;; Copyright (C) 2009 David Wallin.
@@ -17,23 +20,26 @@
 ;; Copyright (C) 2010 Mark Hepburn.
 ;; Copyright (C) 2010 Moritz Bunkus.
 ;; Copyright (C) 2010 Nathan Weizenbaum.
+;; Copyright (C) 2010 Oscar Fuentes.
 ;; Copyright (C) 2009 Pavel Holejsovsky.
 ;; Copyright (C) 2009, 2010 Phil Jackson.
+;; Copyright (C) 2010 Philip Weaver.
 ;; Copyright (C) 2010 Ramkumar Ramachandra.
 ;; Copyright (C) 2010 Remco van 't Veer.
 ;; Copyright (C) 2009 René Stadler.
+;; Copyright (C) 2010 Robin Green.
 ;; Copyright (C) 2010 Roger Crew.
 ;; Copyright (C) 2009, 2010 Rémi Vanicat.
 ;; Copyright (C) 2010 Sean Bryant.
 ;; Copyright (C) 2009 Steve Purcell.
 ;; Copyright (C) 2010 Timo Juhani Lindfors.
 ;; Copyright (C) 2010 Yann Hodique.
+;; Copyright (C) 2010 oscar.
 ;; Copyright (C) 2010 Ævar Arnfjörð Bjarmason.
 ;; Copyright (C) 2010 Óscar Fuentes.
-;; Copyright (C) 2010 Aaron Culich.
 
-;; Author: Marius Vollmer <marius.vollmer@nokia.com>
-;; Maintainer: Phil Jackson <phil@shellarchive.co.uk>
+;; Original Author: Marius Vollmer <marius.vollmer@nokia.com>
+;; Lead developer: Phil Jackson <phil@shellarchive.co.uk>
 ;; Version: 0.8.2
 ;; Keywords: tools
 
@@ -501,6 +507,12 @@ Many Magit faces inherit from this one by default."
     (define-key map (kbd "x") 'magit-reset-head)
     (define-key map (kbd "i") 'magit-ignore-item)
     map))
+
+
+(defvar magit-bug-report-url "http://github.com/philjackson/magit/issues")
+(defun magit-bug-report (str)
+  (message "Unknown error: %s\nPlease file a bug at %s"
+	   str magit-bug-report-url))
 
 ;;; Macros
 
@@ -1966,12 +1978,15 @@ Please see the manual for a complete description of Magit.
   (dolist (buffer (buffer-list))
     (when (and buffer
 	       (buffer-file-name buffer)
+	       (file-readable-p (buffer-file-name buffer))
 	       (magit-string-has-prefix-p (buffer-file-name buffer) dir)
 	       (or ignore-modtime (not (verify-visited-file-modtime buffer)))
 	       (not (buffer-modified-p buffer)))
       (with-current-buffer buffer
-	(ignore-errors
-	  (revert-buffer t t nil))))))
+	(condition-case var
+	  (revert-buffer t t nil)
+	  (error (let ((signal-data (cadr var)))
+		   (cond (t (magit-bug-report signal-data))))))))))
 
 (defun magit-update-vc-modeline (dir)
   "Update the modeline for buffers representable by magit."
@@ -1980,8 +1995,10 @@ Please see the manual for a complete description of Magit.
 	       (buffer-file-name buffer)
 	       (magit-string-has-prefix-p (buffer-file-name buffer) dir))
       (with-current-buffer buffer
-	(ignore-errors
-	  (vc-find-file-hook))))))
+	(condition-case var
+	    (vc-find-file-hook)
+	  (error (let ((signal-data (cadr var)))
+		   (cond (t (magit-bug-report signal-data))))))))))
 
 (defvar magit-refresh-needing-buffers nil)
 (defvar magit-refresh-pending nil)
@@ -2645,22 +2662,22 @@ insert a line to tell how to insert more of them"
 		    "log" "--max-count=1" "--abbrev-commit" "--pretty=oneline"))
 	     (no-commit (not head)))
 	(when remote-string
-	  (insert "Remote: " remote-string "\n"))
-	(insert (format "Local:  %s %s\n"
+	  (insert "Remote:   " remote-string "\n"))
+	(insert (format "Local:    %s %s\n"
 			(propertize (or branch "(detached)")
 				    'face 'magit-branch)
 			(abbreviate-file-name default-directory)))
-	(insert (format "Head:   %s\n"
+	(insert (format "Head:     %s\n"
 			(if no-commit "nothing commited (yet)" head)))
 	(let ((merge-heads (magit-file-lines ".git/MERGE_HEAD")))
 	  (if merge-heads
-	      (insert (format "Merging: %s\n"
+	      (insert (format "Merging:   %s\n"
 			      (magit-concat-with-delim
 			       ", "
 			       (mapcar 'magit-name-rev merge-heads))))))
 	(let ((rebase (magit-rebase-info)))
 	  (if rebase
-	      (insert (apply 'format "Rebasing: %s (%s of %s)\n" rebase))))
+	      (insert (apply 'format "Rebasing: onto %s (%s of %s); Press \"R\" to Abort, Skip, or Continue\n" rebase))))
 	(insert "\n")
 	(magit-git-exit-code "update-index" "--refresh")
 	(magit-insert-untracked-files)
@@ -2933,9 +2950,18 @@ With a prefix-arg, the merge will be squashed.
 if any."
   (cond ((file-exists-p ".git/rebase-merge")
          (list
-          (magit-name-rev (car (magit-file-lines ".git/rebase-merge/message")))
+          ;; The commit we're rebasing onto, i.e. git rebase -i <onto>
+          (magit-name-rev (car (magit-file-lines ".git/rebase-merge/onto")))
+
+          ;; How many commits we've gone through
           (length (magit-file-lines ".git/rebase-merge/done"))
-          (length (magit-file-lines ".git/rebase-merge/git-rebase-todo.backup"))))
+
+          ;; How many commits we have in total, without the comments
+          ;; at the end of git-rebase-todo.backup
+          (let ((todo-lines-with-comments (magit-file-lines ".git/rebase-merge/git-rebase-todo.backup")))
+            (loop for i in todo-lines-with-comments
+                  until (string= "" i)
+                  count i))))
 	(t nil)))
 
 (defun magit-rebase-step ()
@@ -2960,7 +2986,7 @@ if any."
 	      (magit-run-git "rebase" (magit-rev-to-git rev))))
       (let ((cursor-in-echo-area t)
             (message-log-max nil))
-        (message "Rebase in progress. Abort, Skip, or Continue? ")
+        (message "Rebase in progress. [A]bort, [S]kip, or [C]ontinue? ")
         (let ((reply (read-event)))
           (case reply
             ((?A ?a)
