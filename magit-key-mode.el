@@ -20,10 +20,12 @@
   '((logging
      (man-page "git-log")
      (actions
-      ("l" "Short" magit-log)
+      ("l" "Short" magit-display-log)
       ("L" "Long" magit-log-long)
       ("h" "Reflog" magit-reflog)
-      ("H" "Reflog on head" magit-reflog-head))
+      ("rl" "Ranged short" magit-display-log-ranged)
+      ("rL" "Ranged long" magit-log-long-ranged)
+      ("rh" "Ranged reflog" magit-reflog-ranged))
      (switches
       ("-m" "Only merge commits" "--merges")
       ("-f" "First parent" "--first-parent")
@@ -99,6 +101,7 @@
      (actions
       ("m" "Merge" magit-merge))
      (switches
+      ("-ff" "Fast-forward only" "--ff-only")
       ("-nf" "No fast-forward" "--no-ff")
       ("-nc" "No commit" "--no-commit")
       ("-sq" "Squash" "--squash"))

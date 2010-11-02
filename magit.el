@@ -1665,7 +1665,10 @@ FUNC should leave point at the end of the modified region"
 	       (with-current-buffer input
 		 (setq default-directory dir)
 		 (setq magit-process
-		       (apply 'magit-start-process cmd buf cmd args))
+		       ;; Don't use a pty, because it would set icrnl
+		       ;; which would modify the input (issue #20).
+		       (let ((process-connection-type nil))
+			 (apply 'magit-start-process cmd buf cmd args)))
 		 (set-process-filter magit-process 'magit-process-filter)
 		 (process-send-region magit-process
 				      (point-min) (point-max))
@@ -3262,6 +3265,7 @@ typing and automatically refreshes the status buffer."
     (define-key map (kbd "M-n") 'log-edit-next-comment)
     (define-key map (kbd "C-c C-k") 'magit-log-edit-cancel-log-message)
     (define-key map (kbd "C-c C-]") 'magit-log-edit-cancel-log-message)
+    (define-key map (kbd "C-x C-s") 'ignore)
     map))
 
 (defvar magit-pre-log-edit-window-configuration nil)
@@ -3470,8 +3474,15 @@ This means that the eventual commit does 'git commit --allow-empty'."
     (magit-log-edit-mode)
     (message "Type C-c C-c to %s (C-c C-k to cancel)." operation)))
 
-(defun magit-log-edit ()
-  (interactive)
+(defun magit-log-edit (amend-p)
+  "Brings up a buffer to allow editing of commit messages. Given
+a prefix arg will set the amend flag for the commit buffer.
+
+If there is a rebase in progress offer the user the option to
+continue it.
+
+\\{magit-log-edit-mode-map}"
+  (interactive "P")
   (cond ((magit-rebase-info)
 	 (if (y-or-n-p "Rebase in progress.  Continue it? ")
 	     (magit-run-git "rebase" "--continue")))
@@ -3489,6 +3500,7 @@ This means that the eventual commit does 'git commit --allow-empty'."
 			   (y-or-n-p
 			    "Nothing staged.  Commit all unstaged changes? "))
 		       "yes" "no")))))
+	 (when amend-p (magit-log-edit-toggle-amending))
 	 (magit-pop-to-log-edit "commit"))))
 
 (defun magit-add-log ()
@@ -3511,7 +3523,7 @@ This means that the eventual commit does 'git commit --allow-empty'."
 			       section)
 			      (t
 			       (error "No change at point"))))))
-	     (magit-log-edit)
+	     (magit-log-edit nil)
 	     (goto-char (point-min))
 	     (cond ((not (search-forward-regexp
 			  (format "^\\* %s" (regexp-quote file)) nil t))
@@ -3598,11 +3610,7 @@ Working tree and staging area revert to the current 'HEAD'.
 With prefix argument, changes in staging area are kept.
 \('git stash save [--keep-index] DESCRIPTION')"
   (interactive "sStash description: ")
-  (apply 'magit-run-git `("stash"
-			  "save"
-			  ,@(when current-prefix-arg '("--keep-index"))
-			  "--"
-			  ,description)))
+  (apply 'magit-run-git `("stash" "save" ,@magit-custom-options "--" ,description)))
 
 (magit-define-command stash-snapshot ()
   "Create new stash of working tree and staging area; keep changes in place.
@@ -3798,10 +3806,15 @@ With a non numeric prefix ARG, show all entries"
 (defvar magit-log-grep-buffer-name "*magit-grep-log*"
   "Buffer name for display of log grep results.")
 
-(magit-define-command display-log (ask-for-range &rest extra-args)
+(magit-define-command display-log-ranged ()
+  (interactive)
+  (magit-display-log t))
+
+(magit-define-command display-log (&optional ask-for-range &rest extra-args)
+  (interactive)
   (let* ((log-range (if ask-for-range
-		    (magit-read-rev-range "Log" "HEAD")
-		  "HEAD"))
+                        (magit-read-rev-range "Log" "HEAD")
+                      "HEAD"))
 	 (topdir (magit-get-top-dir default-directory))
 	 (args (nconc (list (magit-rev-range-to-git log-range))
                       extra-args)))
@@ -3810,14 +3823,13 @@ With a non numeric prefix ARG, show all entries"
 		     "--pretty=oneline" args)
     (magit-log-mode t)))
 
-(defun magit-log (&optional arg)
-  "View and act upon the output of git log."
-  (interactive "P")
-  (apply 'magit-display-log arg magit-custom-options))
+(magit-define-command log-long-ranged ()
+  (interactive)
+  (magit-log-long t))
 
-(magit-define-command log-long (&optional arg)
-  (interactive "P")
-  (let* ((range (if arg
+(magit-define-command log-long (&optional ranged)
+  (interactive)
+  (let* ((range (if ranged
 		    (magit-read-rev-range "Long log" "HEAD")
 		  "HEAD"))
 	 (topdir (magit-get-top-dir default-directory))
@@ -3855,19 +3867,21 @@ This is only non-nil in reflog buffers.")
   :lighter ()
   :keymap magit-reflog-mode-map)
 
-(magit-define-command reflog (head)
-  (interactive (list (magit-read-rev "Reflog of" (or (magit-guess-branch) "HEAD"))))
-  (if head
-      (let* ((topdir (magit-get-top-dir default-directory))
-	     (args (magit-rev-to-git head)))
-	(switch-to-buffer "*magit-reflog*")
-	(magit-mode-init topdir 'reflog
-			 #'magit-refresh-reflog-buffer head args)
-	(magit-reflog-mode t))))
-
-(magit-define-command reflog-head ()
+(magit-define-command reflog (&optional ask-for-range)
   (interactive)
-  (magit-reflog "HEAD"))
+  (let ((at (or (if ask-for-range
+                    (magit-read-rev "Reflog of" (or (magit-guess-branch) "HEAD")))
+                "HEAD")))
+    (let* ((topdir (magit-get-top-dir default-directory))
+           (args (magit-rev-to-git at)))
+      (switch-to-buffer "*magit-reflog*")
+      (magit-mode-init topdir 'reflog
+                       #'magit-refresh-reflog-buffer at args)
+      (magit-reflog-mode t))))
+
+(magit-define-command reflog-ranged ()
+  (interactive)
+  (magit-reflog t))
 
 ;;; Diffing
 
@@ -4205,8 +4219,6 @@ Return values:
     (define-key map (kbd "RET") 'magit-branches-window-checkout)
     (define-key map (kbd "b") 'magit-branches-window-checkout)
     (define-key map (kbd "k") 'magit-remove-branch)
-    (define-key map (kbd "m") 'magit-branches-window-manual-merge)
-    (define-key map (kbd "M") 'magit-branches-window-automatic-merge)
     (define-key map (kbd "$") 'magit-display-process)
     (define-key map (kbd "q") 'magit-quit-branches-window)
     (define-key map (kbd "g") 'magit-show-branches)
@@ -4259,18 +4271,6 @@ With prefix force the removal even it it hasn't been merged."
     (save-excursion
       (apply 'magit-run-git (remq nil args))
       (magit-show-branches))))
-
-(defun magit-branches-window-manual-merge ()
-  "Merge the branch at point manually."
-  (interactive)
-  (magit-manual-merge (magit--branch-name-at-point))
-  (magit-show-branches))
-
-(defun magit-branches-window-automatic-merge ()
-  "Merge the branch at point automatically."
-  (interactive)
-  (magit-automatic-merge (magit--branch-name-at-point))
-  (magit-show-branches))
 
 (defvar magit-branches-buffer-name "*magit-branches*")
 
