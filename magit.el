@@ -437,6 +437,7 @@ Many Magit faces inherit from this one by default."
     (define-key map (kbd "v") 'magit-revert-item)
     (define-key map (kbd "b") 'magit-key-mode-popup-branching)
     (define-key map (kbd "m") 'magit-key-mode-popup-merging)
+    (define-key map (kbd "M") 'magit-key-mode-popup-submodule)
     (define-key map (kbd "k") 'magit-discard-item)
     (define-key map (kbd "e") 'magit-interactive-resolve-item)
     (define-key map (kbd "C") 'magit-add-log)
@@ -4443,5 +4444,4 @@ With a prefix arg, do a submodule update --init"
 
 
 (provide 'magit)
-
 ;;; magit.el ends here

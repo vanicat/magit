@@ -48,7 +48,7 @@ as an extension to Emacs.
 * Rebasing::
 * Rewriting::
 * Pushing and Pulling::
-* Submodules::
+* Submodules::         
 * Using Magit Extensions::
 * Using Git Directly::
 @end menu
@@ -681,16 +681,17 @@ Magit shows them in a section called @emph{Unpulled changes}.  Typing
 @chapter Submodules
 
 @table @kbd
-@item C-c C-m u
+@item M u
 Update the submodules, with a prefix argument it will initializing.
 
-@item C-c C-m i
+@item M i
 Initialize the submodules.
 
-@item C-c C-m s
+@item M s
 Synchronizes submodules' remote URL configuration setting to the value
 specified in .gitmodules.
 @end table
+
 
 @node Using Magit Extensions
 @chapter Magit Extensions
@@ -700,6 +701,7 @@ specified in .gitmodules.
 * Interfacing with Topgit::
 * Developing Extensions::
 @end menu
+
 
 @node Interfacing with Subversion
 @section Interfacing with Subversion
