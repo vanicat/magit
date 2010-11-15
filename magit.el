@@ -1514,17 +1514,17 @@ error otherwise."
             (,context (magit-section-context-type ,section)))
        (cond ,@(mapcar (lambda (clause)
                          (if (eq (car clause) t)
-                             `(,@clause t)
+                             `(,@clause)
                            (let ((prefix (reverse (car clause)))
                                  (body (cdr clause)))
                              `((magit-prefix-p ',prefix ,context)
                                ,@body
-                               t))))
+                               ))))
                        clauses)
              ,@(when opname
                  `(((run-hook-with-args-until-success
                      ',(intern (format "magit-%s-action-hook" opname)))
-                    t)
+                    )
                    ((not ,type)
                     (error "Nothing to %s here" ,opname))
                    (t
