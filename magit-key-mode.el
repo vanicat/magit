@@ -121,6 +121,7 @@
      (man-page "git-submodule")
      (actions
       ("u" "Update" magit-submodule-update)
+      ("b" "Both update and init" magit-submodule-update-init)
       ("i" "Init" magit-submodule-init)
       ("s" "Sync" magit-submodule-sync))))
   "Holds the key, help, function mapping for the log-mode. If you

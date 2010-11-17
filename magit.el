@@ -1845,6 +1845,7 @@ FUNC should leave point at the end of the modified region"
     ["Remote update" magit-remote-update t]
     ("Submodule"
      ["Submodule update" magit-submodule-update t]
+     ["Submodule update and init" magit-submodule-update-init t]
      ["Submodule init" magit-submodule-init t]
      ["Submodule sync" magit-submodule-sync t])
     "---"
@@ -4429,6 +4430,10 @@ With a prefix arg, do a submodule update --init"
   (interactive "P")
   (let ((default-directory (magit-get-top-dir default-directory)))
     (apply #'magit-run-git-async "submodule" "update" (if init '("--init") ()))))
+
+(defun magit-submodule-update-init ()
+  "Update and init the submodule of the current git repository."
+  (magit-submodule-update t))
 
 (defun magit-submodule-init ()
   "Initialize the submodules"

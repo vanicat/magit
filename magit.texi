@@ -687,6 +687,9 @@ Update the submodules, with a prefix argument it will initializing.
 @item M i
 Initialize the submodules.
 
+@item M b
+Update and initialize the submodules in one go.
+
 @item M s
 Synchronizes submodules' remote URL configuration setting to the value
 specified in .gitmodules.
