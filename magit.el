@@ -120,6 +120,16 @@ save all modified buffers without asking."
 		 (const :tag "Ask" t)
 		 (const :tag "Save without asking" dontask)))
 
+(defcustom magit-save-some-buffers-predicate
+  'magit-save-buffers-predicate-tree-only
+  "Specifies a predicate function on \\[magit-save-some-buffers] to determine which
+   unsaved buffers should be prompted for saving."
+
+  :group 'magit
+  :type '(radio (function-item magit-save-buffers-predicate-tree-only)
+                (function-item magit-save-buffers-predicate-all)
+		(function :tag "Other")))
+
 (defcustom magit-commit-all-when-nothing-staged 'ask
   "Determines what \\[magit-log-edit] does when nothing is staged.
 Setting this to nil will make it do nothing, setting it to t will
@@ -336,6 +346,18 @@ Many Magit faces inherit from this one by default."
      :background "LemonChiffon1"
      :foreground "goldenrod4"))
   "Face for tag labels shown in log buffer."
+  :group 'magit)
+
+(defface magit-log-head-label-patches
+  '((((class color) (background light))
+     :box t
+     :background "IndianRed1"
+     :foreground "IndianRed4")
+    (((class color) (background dark))
+     :box t
+     :background "IndianRed1"
+     :foreground "IndianRed4"))
+  "Face for Stacked Git patches"
   :group 'magit)
 
 (defvar magit-custom-options '()
@@ -2416,7 +2438,7 @@ in the corresponding directories."
 
 (defvar magit-log-oneline-re
   (concat
-   "^\\([_\\*|/ -.]+\\)"         ; graph   (1)
+   "^\\([_\\*|/ -.]+\\)?"        ; graph   (1)
    "\\(?:"
    "\\([0-9a-fA-F]\\{40\\}\\) "  ; sha1    (2)
    "\\(?:\\((.+?)\\) \\)?"       ; refs    (3)
@@ -2432,7 +2454,7 @@ must return a string which will represent the log line.")
 
 (defun magit-present-log-line (graph sha1 refs message)
   "The default log line generator."
-  (let* ((ref-re "\\(?:tag: \\)?refs/\\(bisect\\|tags\\|remotes\\|heads\\)/\\(.+\\)")
+  (let* ((ref-re "\\(?:tag: \\)?refs/\\(bisect\\|tags\\|remotes\\|patches/[^/]*\\|heads\\)/\\(.+\\)")
 	 (string-refs
 	  (when refs
 	    (concat (mapconcat
@@ -2444,6 +2466,8 @@ must return a string which will represent the log line.")
 			'face (cond
 			       ((string= (match-string 1 r) "remotes")
 				'magit-log-head-label-remote)
+			       ((string-match "^patches/[^/]*$" (match-string 1 r)) ; Stacked Git
+				'magit-log-head-label-patches)
 			       ((string= (match-string 1 r) "bisect")
 				(if (string= (match-string 2 r) "bad")
 				    'magit-log-head-label-bisect-bad
@@ -2460,7 +2484,8 @@ must return a string which will represent the log line.")
 	 (propertize (substring sha1 0 8) 'face 'magit-log-sha1)
        (insert-char ? 8))
      " "
-     (propertize graph 'face 'magit-log-graph)
+     (when graph
+       (propertize graph 'face 'magit-log-graph))
      string-refs
      (when message
        (propertize message 'face 'magit-log-message)))))
@@ -2738,12 +2763,34 @@ If PRED is t, then certain non-file buffers will also be considered.
 If PRED is a zero-argument function, it indicates for each buffer whether
 to consider it or not when called with that buffer current."
   (interactive)
-  (if magit-save-some-buffers
-      (save-some-buffers
-       (eq magit-save-some-buffers 'dontask)
-       pred)
-    (when msg
-	(message msg))))
+  (let ((predicate-function (or pred magit-save-some-buffers-predicate)))
+    
+    (if magit-save-some-buffers
+        (save-some-buffers
+         (eq magit-save-some-buffers 'dontask)
+         predicate-function)
+      (when msg
+        (message msg)))))
+
+
+(defun magit-save-buffers-predicate-all () 
+  "Prompt to save all buffers with unsaved changes"
+  t)
+
+(defun magit-save-buffers-predicate-tree-only ()
+  "Only prompt to save buffers which are within the current git project (as
+  determined by the dir passed to `magit-status'."
+  (let ((current-buf-dir
+         (file-name-directory (buffer-file-name (current-buffer)))))
+    (let ((invoked-git-root-dir (or (magit-get-top-dir dir) dir)))
+      (let ((save-this-buffer
+             (and
+              invoked-git-root-dir
+              (eq 0
+                  (string-match
+                   (regexp-quote invoked-git-root-dir)
+                   current-buf-dir)))))
+        save-this-buffer))))
 
 ;;;###autoload
 (defun magit-status (dir)
