@@ -715,7 +715,7 @@ Many Magit faces inherit from this one by default."
 (defun magit-get-top-dir (cwd)
   (let ((cwd (expand-file-name (file-truename cwd))))
     (when (file-directory-p cwd)
-      (let* ((default-directory cwd)
+      (let* ((default-directory (file-name-as-directory cwd))
              (cdup (magit-git-string "rev-parse" "--show-cdup")))
         (when cdup
           (file-name-as-directory (expand-file-name cdup cwd)))))))
@@ -2782,7 +2782,7 @@ to consider it or not when called with that buffer current."
   determined by the dir passed to `magit-status'."
   (let ((current-buf-dir
          (file-name-directory (buffer-file-name (current-buffer)))))
-    (let ((invoked-git-root-dir (or (magit-get-top-dir dir) dir)))
+    (let ((invoked-git-root-dir (magit-get-top-dir default-directory)))
       (let ((save-this-buffer
              (and
               invoked-git-root-dir
@@ -2921,7 +2921,7 @@ If REVISION is a remote branch, offer to create a local tracking branch.
                            (unless (string= current-branch default)
                              default)
                            (if current-branch
-                               (cons (concat "refs/heads/" current-branch)
+                               (cons (concat "refs/heads/" current-branch "$")
                                      magit-uninteresting-refs)
                              magit-uninteresting-refs)))))
   (if revision
@@ -3417,7 +3417,7 @@ toggled on.  When it's toggled on for the first time, return
 (defun magit-log-edit-setup-author-env (author)
   (cond (author
 	 ;; XXX - this is a bit strict, probably.
-	 (or (string-match "\\(.*\\) <\\(.*\\)>, \\(.*\\)" author)
+	 (or (string-match "\\(.*\\) <\\(.*\\)>" author)
 	     (error "Can't parse author string"))
 	 ;; Shucks, setenv destroys the match data.
 	 (let ((name (match-string 1 author))
@@ -3866,6 +3866,7 @@ With a non numeric prefix ARG, show all entries"
                       "HEAD"))
 	 (topdir (magit-get-top-dir default-directory))
 	 (args (nconc (list (magit-rev-range-to-git log-range))
+                      magit-custom-options
                       extra-args)))
     (switch-to-buffer magit-log-buffer-name)
     (magit-mode-init topdir 'log #'magit-refresh-log-buffer log-range
@@ -4493,7 +4494,6 @@ With a prefix arg, do a submodule update --init"
   (interactive)
   (let ((default-directory (magit-get-top-dir default-directory)))
     (magit-run-git-async "submodule" "sync")))
-
 
 (provide 'magit)
 ;;; magit.el ends here
