@@ -1522,9 +1522,12 @@ HEAD is (SECTION INFO &optional OPNAME),
 CLAUSES is a list of CLAUSE, each clause is (SECTION-TYPE &BODY)
 where SECTION-TYPE describe section where BODY will be run.
 
-This returns non-nil if some section matches. If no section
-matches, this returns nil if no OPNAME was given and throws an
-error otherwise."
+This returns non-nil if some section matches. If the
+corresponding body return a non-nil value, it is returned,
+otherwise it roturn t.
+
+If no section matches, this returns nil if no OPNAME was given
+and throws an error otherwise."
   (declare (indent 1))
   (let ((section (car head))
         (info (cadr head))
@@ -1537,17 +1540,17 @@ error otherwise."
             (,context (magit-section-context-type ,section)))
        (cond ,@(mapcar (lambda (clause)
                          (if (eq (car clause) t)
-                             `(,@clause)
+                             `(t (or (progn ,@(cdr clause))
+				     t))
                            (let ((prefix (reverse (car clause)))
                                  (body (cdr clause)))
                              `((magit-prefix-p ',prefix ,context)
-                               ,@body
-                               ))))
+                               (or (progn ,@body)
+				   t)))))
                        clauses)
              ,@(when opname
                  `(((run-hook-with-args-until-success
-                     ',(intern (format "magit-%s-action-hook" opname)))
-                    )
+                     ',(intern (format "magit-%s-action-hook" opname))))
                    ((not ,type)
                     (error "Nothing to %s here" ,opname))
                    (t
@@ -2978,7 +2981,7 @@ If the branch is the current one, offers to switch to `master' first.
   (magit-section-case (item info)
     ((wazzup commit)
      (magit-section-info (magit-section-parent item)))
-    ((commit) (substring info 0 8))
+    ((commit) (magit-name-rev (substring info 0 8)))
     ((wazzup) info)))
 
 (defun magit-merge (revision)
@@ -2986,9 +2989,7 @@ If the branch is the current one, offers to switch to `master' first.
 With a prefix-arg, the merge will be squashed.
 \('git merge --no-commit [--squash|--no-ff] REVISION')."
   (interactive
-   (list (magit-read-rev (concat
-                          "Merge"
-                          (magit-guess-branch)))))
+   (list (magit-read-rev "Merge" (magit-default-rev))))
   (if revision
       (apply 'magit-run-git
              "merge"
