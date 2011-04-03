@@ -423,17 +423,17 @@ Many Magit faces inherit from this one by default."
 
 (defface magit-log-graph
   '((((class color) (background light))
-     :foreground "grey11")
+     (:foreground "grey11"))
     (((class color) (background dark))
-     :foreground "grey80"))
+     (:foreground "grey80")))
   "Face for the graph element of the log output."
   :group 'magit-faces)
 
 (defface magit-log-sha1
   '((((class color) (background light))
-     :foreground "firebrick")
+     (:foreground "firebrick"))
     (((class color) (background dark))
-     :foreground "tomato"))
+     (:foreground "tomato")))
   "Face for the sha1 element of the log output."
   :group 'magit-faces)
 
@@ -454,61 +454,61 @@ Many Magit faces inherit from this one by default."
 
 (defface magit-log-head-label-bisect-good
   '((((class color) (background light))
-     :box t
-     :background "light green"
-     :foreground "dark olive green")
-    (((class color) (background dark))
-     :box t
+     (:box t
      :background "light green"
      :foreground "dark olive green"))
+    (((class color) (background dark))
+     (:box t
+     :background "light green"
+     :foreground "dark olive green")))
   "Face for good bisect refs."
   :group 'magit-faces)
 
 (defface magit-log-head-label-bisect-bad
   '((((class color) (background light))
-     :box t
-     :background "IndianRed1"
-     :foreground "IndianRed4")
-    (((class color) (background dark))
-     :box t
+     (:box t
      :background "IndianRed1"
      :foreground "IndianRed4"))
+    (((class color) (background dark))
+     (:box t
+     :background "IndianRed1"
+     :foreground "IndianRed4")))
   "Face for bad bisect refs."
   :group 'magit-faces)
 
 (defface magit-log-head-label-remote
   '((((class color) (background light))
-     :box t
+     (:box t
      :background "Grey85"
-     :foreground "OliveDrab4")
+     :foreground "OliveDrab4"))
     (((class color) (background dark))
-     :box t
+     (:box t
      :background "Grey11"
-     :foreground "DarkSeaGreen2"))
+     :foreground "DarkSeaGreen2")))
   "Face for remote branch head labels shown in log buffer."
   :group 'magit-faces)
 
 (defface magit-log-head-label-tags
   '((((class color) (background light))
-     :box t
-     :background "LemonChiffon1"
-     :foreground "goldenrod4")
-    (((class color) (background dark))
-     :box t
+     (:box t
      :background "LemonChiffon1"
      :foreground "goldenrod4"))
+    (((class color) (background dark))
+     (:box t
+     :background "LemonChiffon1"
+     :foreground "goldenrod4")))
   "Face for tag labels shown in log buffer."
   :group 'magit-faces)
 
 (defface magit-log-head-label-patches
   '((((class color) (background light))
-     :box t
-     :background "IndianRed1"
-     :foreground "IndianRed4")
-    (((class color) (background dark))
-     :box t
+     (:box t
      :background "IndianRed1"
      :foreground "IndianRed4"))
+    (((class color) (background dark))
+     (:box t
+     :background "IndianRed1"
+     :foreground "IndianRed4")))
   "Face for Stacked Git patches."
   :group 'magit-faces)
 
@@ -547,23 +547,23 @@ operation after commit).")
 
 (defface magit-log-head-label-local
   '((((class color) (background light))
-     :box t
+     (:box t
      :background "Grey85"
-     :foreground "LightSkyBlue4")
+     :foreground "LightSkyBlue4"))
     (((class color) (background dark))
-     :box t
+     (:box t
      :background "Grey13"
-     :foreground "LightSkyBlue1"))
+     :foreground "LightSkyBlue1")))
   "Face for local branch head labels shown in log buffer."
   :group 'magit-faces)
 
 (defface magit-log-head-label-default
   '((((class color) (background light))
-     :box t
-     :background "Grey50")
-    (((class color) (background dark))
-     :box t
+     (:box t
      :background "Grey50"))
+    (((class color) (background dark))
+     (:box t
+     :background "Grey50")))
   "Face for unknown ref labels shown in log buffer."
   :group 'magit-faces)
 
