@@ -789,7 +789,11 @@ Does not follow symlinks."
             ;; `directory-files-no-dot-files-regex' borrowed from Emacs 23
             (dolist (file (directory-files directory 'full "\\([^.]\\|\\.\\([^.]\\|\\..\\)\\).*"))
               (magit-delete-directory file recursive)))
-        (delete-directory directory)))))
+        (delete-directory directory))))
+
+  (if (functionp 'process-file)
+      (defalias 'magit-process-file 'process-file)
+      (defalias 'magit-process-file 'call-process)))
 
 ;;; Utilities
 
@@ -883,7 +887,7 @@ Read `completing-read' documentation for the meaning of the argument"
 (defun magit-cmd-output (cmd args)
   (let ((cmd-output (with-output-to-string
                       (with-current-buffer standard-output
-                        (apply #'process-file
+                        (apply #'magit-process-file
                                cmd
                                nil (list t nil) nil
                                args)))))
@@ -896,8 +900,8 @@ Read `completing-read' documentation for the meaning of the argument"
   (magit-split-lines (magit-git-output args)))
 
 (defun magit-git-exit-code (&rest args)
-  (apply #'process-file magit-git-executable nil nil nil
-         (append magit-git-standard-options args)))
+  (apply #'magit-process-file magit-git-executable nil nil nil
+	 (append magit-git-standard-options args)))
 
 (defun magit-file-lines (file)
   (when (file-exists-p file)
@@ -2125,7 +2129,7 @@ function can be enriched by magit extension like magit-topgit and magit-svn"
                    (magit-need-refresh magit-process-client-buffer))))
               (t
                (setq successp
-                     (equal (apply 'process-file cmd nil buf nil args) 0))
+                     (equal (apply 'magit-process-file cmd nil buf nil args) 0))
                (magit-set-mode-line-process nil)
                (with-current-buffer magit-process-client-buffer
                  (when (derived-mode-p 'magit-mode)
