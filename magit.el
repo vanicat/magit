@@ -5575,7 +5575,7 @@ With a prefix argument, visit in other window."
      (kill-new info)
      (message "%s" info))))
 
-(eval-when-compile (require 'server))
+(eval-when-compile (unless (featurep 'xemacs)(require 'server)))
 
 (defun magit-server-running-p ()
   "Test whether server is running (works with < 23 as well).
