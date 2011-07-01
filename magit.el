@@ -2063,6 +2063,17 @@ function can be enriched by magit extension like magit-topgit and magit-svn"
     (magit-set-mode-line-process nil)
     (magit-refresh-buffer magit-process-client-buffer)))
 
+
+(defun magit-ask-password (ask)
+  "Ask password to the user, returning it in 
+
+To be used by emacsclient as an ASK_PASS, look at bin/magit-askpass to
+know how to do it"
+  (condition-case ()
+      (let ((pass (read-passwd ask ())))
+        (intern pass))
+    (quit nil)))
+
 (defun magit-password (proc string)
   "Checks if git/ssh asks for a password and ask the user for it."
   (let (ask)
