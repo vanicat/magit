@@ -4610,6 +4610,11 @@ continue it.
         (magit-log-edit-toggle-amending))
       (when empty-p
         (magit-log-edit-toggle-allow-empty))
+      (let* ((git-dir (magit-git-dir))
+             (pre-commit (concat git-dir "hooks/pre-commit")))
+        (when (and (file-exists-p pre-commit)
+                   (file-executable-p pre-commit))
+          (magit-run* (list pre-commit))))
       (let ((author-email (or (getenv "GIT_AUTHOR_EMAIL") ""))
             (author-name (or (getenv "GIT_AUTHOR_NAME") ""))
             (author-date (or (getenv "GIT_AUTHOR_DATE") "")))
