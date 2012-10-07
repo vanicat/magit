@@ -88,10 +88,10 @@
 (eval-and-compile
   (unless (fboundp 'declare-function) (defmacro declare-function (&rest args))))
 
-(eval-when-compile  (require 'view))
+;(eval-when-compile  (require 'view))
 (declare-function view-mode 'view)
 (eval-when-compile (require 'iswitchb))
-(eval-when-compile (require 'ido))
+;(eval-when-compile (require 'ido))
 (eval-when-compile (require 'ediff))
 
 ;; Dummy to be used by the defcustoms when first loading the file.
