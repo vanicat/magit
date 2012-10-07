@@ -380,44 +380,44 @@ This is calculated from `magit-highlight-indentation'.")
   :group 'magit)
 
 (defface magit-header
-  '((t :inherit header-line))
+  '((t (:inherit header-line)))
   "Face for generic header lines.
 
 Many Magit faces inherit from this one by default."
   :group 'magit-faces)
 
 (defface magit-section-title
-  '((t :inherit magit-header))
+  '((t (:inherit magit-header)))
   "Face for section titles."
   :group 'magit-faces)
 
 (defface magit-branch
-  '((t :inherit magit-header))
+  '((t (:inherit magit-header)))
   "Face for the current branch."
   :group 'magit-faces)
 
 (defface magit-diff-file-header
-  '((t :inherit diff-file-header))
+  '((t (:inherit diff-file-header)))
   "Face for diff file header lines."
   :group 'magit-faces)
 
 (defface magit-diff-hunk-header
-  '((t :inherit diff-hunk-header))
+  '((t (:inherit diff-hunk-header)))
   "Face for diff hunk header lines."
   :group 'magit-faces)
 
 (defface magit-diff-add
-  '((t :inherit diff-added))
+  '((t (:inherit diff-added)))
   "Face for lines in a diff that have been added."
   :group 'magit-faces)
 
 (defface magit-diff-none
-  '((t :inherit diff-context))
+  '((t (:inherit diff-context)))
   "Face for lines in a diff that are unchanged."
   :group 'magit-faces)
 
 (defface magit-diff-del
-  '((t :inherit diff-removed))
+  '((t (:inherit diff-removed)))
   "Face for lines in a diff that have been deleted."
   :group 'magit-faces)
 
@@ -443,12 +443,12 @@ Many Magit faces inherit from this one by default."
   :group 'magit-faces)
 
 (defface magit-item-highlight
-  '((t :inherit highlight))
+  '((t (:inherit highlight)))
   "Face for highlighting the current item."
   :group 'magit-faces)
 
 (defface magit-item-mark
-  '((t :inherit secondary-selection))
+  '((t (:inherit secondary-selection)))
   "Face for highlighting marked item."
   :group 'magit-faces)
 
@@ -513,7 +513,7 @@ Many Magit faces inherit from this one by default."
   :group 'magit-faces)
 
 (defface magit-whitespace-warning-face
-  '((t :inherit trailing-whitespace))
+  '((t (:inherit trailing-whitespace)))
   "Face for highlighting whitespace errors in Magit diffs."
   :group 'magit-faces)
 
