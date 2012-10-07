@@ -402,14 +402,14 @@ highlighted before the description."
     (make-local-variable 'font-lock-defaults)
     (use-local-map (magit-key-mode-get-key-map for-group))
     (setq actions-p (magit-key-mode-draw for-group))
-    (delete-trailing-whitespace)
+    (delete-trailing-whitespace)        ;TODO xemacs compatibility
     (setq mode-name "magit-key-mode" major-mode 'magit-key-mode)
     (if (and is-first actions-p)
       (progn (goto-char actions-p)
              (magit-key-mode-jump-to-next-exec))
       (goto-char old-point)))
   (setq buffer-read-only t)
-  (fit-window-to-buffer))
+  (fit-window-to-buffer))               ;TODO xemacs compatibility
 
 (defun magit-key-mode-draw-header (header)
   "Draw a header with the correct face."
