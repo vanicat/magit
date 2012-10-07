@@ -131,11 +131,10 @@ match REQUIRED-STATUS."
                           'magit-bisect-mode-history)))
   (unless (magit--bisecting-p)
     (error "Not bisecting"))
-  (let ((file (make-temp-file "magit-bisect-run"))
+  (let ((file (make-temp-name "magit-bisect-run"))
         buffer)
-    (with-temp-buffer
-      (insert "#!/bin/sh\n" command "\n")
-      (write-region (point-min) (point-max) file))
+    (with-temp-file file
+      (insert "#!/bin/sh\n" command "\n"))
     (set-file-modes file #o755)
     (magit-run-git-async "bisect" "run" file)
     (magit-display-process)
