@@ -92,6 +92,12 @@ Also, do not record undo information."
     (defalias 'magit-start-process 'start-process))
   )
 
+(defmacro magit-called-interactively-p (arg)
+  `(condition-case nil
+       (called-interactively-p ,arg)
+     (wrong-number-of-arguments
+      (called-interactively-p))))
+
 ;; Added in Emacs 22.2.
 (defun magit-use-region-p ()
   (if (fboundp 'use-region-p)

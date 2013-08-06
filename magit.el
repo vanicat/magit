@@ -1891,7 +1891,7 @@ Use the specified START and END positions."
                           (magit-section-beginning sec)))))))
     (when pos
       (goto-char pos)
-      (when (called-interactively-p 'interactive)
+      (when (magit-called-interactively-p 'interactive)
         (message "No diffstats section found")))))
 
 (defmacro magit-define-section-jumper (sym title)
@@ -6738,7 +6738,7 @@ init file:
                             (package-desc-version
                              (cadr (assq 'magit package-alist)))))))))))
     (if (stringp magit-version)
-        (when (called-interactively-p 'any)
+        (when (magit-called-interactively-p 'any)
           (message "magit-%s" magit-version))
       (if noerror
           (progn (setq magit-version 'error)
