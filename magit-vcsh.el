@@ -73,3 +73,10 @@ Return it in a form switable to append to `process-environment'"
 (magit-vcsh-advice-macro magit-git-exit-code)
 (magit-vcsh-advice-macro magit-run*)
 (magit-vcsh-advice-macro magit-start-process)
+
+(defun magit-vcsh-status (name)
+  "call magit-status but changing the command to use vcsh"
+  (interactive "Mvcsh repos:")
+
+  (magit-vcsh-set-env name t
+      (magit-status "~/")))
