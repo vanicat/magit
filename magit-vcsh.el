@@ -80,3 +80,8 @@ Return it in a form switable to append to `process-environment'"
 
   (magit-vcsh-set-env name t
       (magit-status "~/")))
+
+(defadvice magit-buffer-switch (around magit-buffer-switch-vcsh-advice activate)
+  (let ((magit-vcsh-env-local magit-vcsh-env))
+    ad-do-it
+    (setq magit-vcsh-env magit-vcsh-env-local)))
