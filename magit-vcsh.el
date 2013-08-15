@@ -61,3 +61,15 @@ Return it in a form switable to append to `process-environment'"
      (prog1
          (progn ,@body)
        ,(when new-buffer '(setq magit-vcsh-env env)))))
+
+(defmacro magit-vcsh-advice-macro (name)
+  `(defadvice ,name (around ,(intern (format "%s-vcsh-advice" name)) activate)
+     (let ((process-environment (if magit-vcsh-env
+                                    (append magit-vcsh-env process-environment)
+                                    process-environment)))
+       ad-do-it)))
+
+(magit-vcsh-advice-macro magit-cmd-output)
+(magit-vcsh-advice-macro magit-git-exit-code)
+(magit-vcsh-advice-macro magit-run*)
+(magit-vcsh-advice-macro magit-start-process)
