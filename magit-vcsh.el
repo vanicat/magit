@@ -104,3 +104,8 @@ Return it in a form switable to append to `process-environment'"
     ad-do-it
     (setq magit-vcsh-env magit-vcsh-env*)
     (setq magit-vcsh-name magit-vcsh-name*)))
+
+(defadvice magit-show-commit (around magit-show-commit-vcsh-advice activate)
+  (let ((magit-vcsh-env* magit-vcsh-env)
+        (magit-vcsh-name* magit-vcsh-name))
+    ad-do-it))
