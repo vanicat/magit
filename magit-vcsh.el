@@ -31,9 +31,26 @@
   :group 'magit-vcsh
   :type 'string)
 
+(defvar-local magit-vcsh-name ()
+  "the vcsh environment variable")
+(put 'magit-vcsh-name 'permanent-local t)
+(defvar magit-vcsh-name*)
+
 (defvar-local magit-vcsh-env ()
   "the vcsh environment variable")
 (put 'magit-vcsh-env 'permanent-local t)
+(defvar magit-vcsh-env*)
+
+(defun magit-vcsh-for-magit-hook ()
+  "Set the buffer local variable of magit-vcsh
+
+use the `magit-vcsh-name*` and `magit-vcsh-env*` variable that
+are bind dynamicly."
+  (when (boundp 'magit-vcsh-name*)
+    (setq magit-vcsh-name magit-vcsh-name*)
+    (setq magit-vcsh-env magit-vcsh-env*)))
+
+(add-hook 'magit-mode-hook 'magit-vcsh-for-magit-hook)
 
 (defun magit-vcsh-string (&rest args)
   (magit-trim-line (magit-cmd-output magit-vcsh-executable args)))
@@ -56,11 +73,10 @@ Return it in a form switable to append to `process-environment'"
   (declare (indent defun)
            (debug (&define name new-buffer
                            def-body)))
-  `(let* ((env (magit-vcsh-get-env name)) ;TODO don't use a named argument...
-          (process-environment (append env process-environment)))
-     (prog1
-         (progn ,@body)
-       ,(when new-buffer '(setq magit-vcsh-env env)))))
+  `(let* ((magit-vcsh-env* (magit-vcsh-get-env ,name))
+          (process-environment (append magit-vcsh-env* process-environment))
+          (magit-vcsh-name* ,name))
+     (progn ,@body)))
 
 (defmacro magit-vcsh-advice-macro (name)
   `(defadvice ,name (around ,(intern (format "%s-vcsh-advice" name)) activate)
@@ -83,6 +99,8 @@ Return it in a form switable to append to `process-environment'"
   (rename-buffer (format "*magit-vcsh: %s" name) t))
 
 (defadvice magit-buffer-switch (around magit-buffer-switch-vcsh-advice activate)
-  (let ((magit-vcsh-env-local magit-vcsh-env))
+  (let ((magit-vcsh-env* magit-vcsh-env)
+        (magit-vcsh-name* magit-vcsh-name))
     ad-do-it
-    (setq magit-vcsh-env magit-vcsh-env-local)))
+    (setq magit-vcsh-env magit-vcsh-env*)
+    (setq magit-vcsh-name magit-vcsh-name*)))
