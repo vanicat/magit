@@ -79,7 +79,8 @@ Return it in a form switable to append to `process-environment'"
   (interactive "Mvcsh repos:")
 
   (magit-vcsh-set-env name t
-      (magit-status "~/")))
+      (magit-status "~/"))
+  (rename-buffer (format "*magit-vcsh: %s" name) t))
 
 (defadvice magit-buffer-switch (around magit-buffer-switch-vcsh-advice activate)
   (let ((magit-vcsh-env-local magit-vcsh-env))
