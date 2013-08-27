@@ -114,3 +114,5 @@ Return it in a form switable to append to `process-environment'"
   (let ((magit-vcsh-env* magit-vcsh-env)
         (magit-vcsh-name* magit-vcsh-name))
     ad-do-it))
+
+(provide 'magit-vcsh)
