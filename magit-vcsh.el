@@ -90,8 +90,9 @@ Return it in a form switable to append to `process-environment'"
 (magit-vcsh-advice-macro magit-run*)
 (magit-vcsh-advice-macro magit-start-process)
 
+;;;###autoload
 (defun magit-vcsh-status (name)
-  "call magit-status but changing the command to use vcsh"
+  "Get the magit-status buffer of a vcsh repository."
   (interactive "Mvcsh repos:")
 
   (magit-vcsh-set-env name t
