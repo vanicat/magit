@@ -116,4 +116,7 @@ Return it in a form switable to append to `process-environment'"
         (magit-vcsh-name* magit-vcsh-name))
     ad-do-it))
 
+(magit-vcsh-advice-macro magit-run-gitk)
+(magit-vcsh-advice-macro magit-run-git-gui)
+
 (provide 'magit-vcsh)
