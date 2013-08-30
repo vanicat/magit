@@ -5480,6 +5480,14 @@ With a prefix argument amend to the commit at HEAD instead.
       (magit-with-emacsclient magit-server-window-for-commit
         (apply 'magit-run-git-async subcmd args))
     (let ((topdir (magit-get-top-dir)))
+      (let ((process-environment (cons "GIT_EDITOR=/path/to/nowhere" process-environment)))
+        (condition-case err
+            (apply 'magit-run-git subcmd args)
+          (error (let ((message (cadr err)))
+                   (unless (and message
+                                (stringp message)
+                                (string-match "^unable to start editor" message))
+                     (signal (car err) (cdr err)))))))
       (with-current-buffer
           (find-file-noselect
            (magit-git-dir (if (equal subcmd "tag")
