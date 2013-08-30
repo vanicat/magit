@@ -5500,7 +5500,8 @@ With a prefix argument amend to the commit at HEAD instead.
         (add-hook 'git-commit-commit-hook
                   (apply-partially
                    (lambda (default-directory args)
-                     (magit-run-git* args))
+                     (magit-with-refresh
+                       (magit-run-git* args)))
                    topdir `(,subcmd
                             ,"--cleanup=strip"
                             ,(concat "--file=" (file-relative-name
