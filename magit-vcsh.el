@@ -62,11 +62,9 @@ are bind dynamicly."
 
 Return it in a form switable to append to `process-environment'"
   (let ((git-dir (magit-vcsh-string "run" name "sh" "-c" "echo \$GIT_DIR"))
-        (git-work-tree (magit-vcsh-string "run" name "sh" "-c" "echo \$GIT_WORK_TREE"))
         (vcsh-directory (magit-vcsh-string "run" name "sh" "-c" "echo \$VCSH_DIRECTORY"))
         (vcsh-repo-name (magit-vcsh-string "run" name "sh" "-c" "echo \$VCSH_REPO_NAME")))
     (list (format "GIT_DIR=%s" git-dir)
-          (format "GIT_WORK_TREE=%s" git-work-tree)
           (format "VCSH_DIRECTORY=%s" vcsh-directory)
           (format "VCSH_REPO_NAME=%s" vcsh-repo-name))))
 
