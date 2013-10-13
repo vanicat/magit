@@ -71,7 +71,7 @@ Return it in a form switable to append to `process-environment'"
 (defmacro magit-vcsh-set-env (name new-buffer &rest body)
   "Run BODY with correct environement"
   (declare (indent defun)
-           (debug (&define name new-buffer
+           (debug (symbolp symbolp
                            def-body)))
   `(let* ((magit-vcsh-env* (magit-vcsh-get-env ,name))
           (process-environment (append magit-vcsh-env* process-environment))
