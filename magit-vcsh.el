@@ -53,7 +53,9 @@ are bind dynamicly."
 (add-hook 'magit-mode-hook 'magit-vcsh-for-magit-hook)
 
 (defun magit-vcsh-string (&rest args)
-  (magit-trim-line (magit-cmd-output magit-vcsh-executable args)))
+  (let ((magit-git-executable magit-vcsh-executable)
+        (magit-git-standard-options ()))
+    (apply 'magit-git-string args)))
 
 (defun magit-vcsh-get-env (name)
   "get env from vcsh.
