@@ -177,7 +177,7 @@
     (let ((magit-old-top-section nil))
       (magit-wash-sequence #'magit-stgit--wash-patch)))
 
-(magit-define-inserter series ()
+(magit-define-inserter stgit-series ()
   (when (executable-find magit-stgit-executable)
     (magit-insert-section 'series
                           "Series:" 'magit-stgit--wash-series
@@ -248,6 +248,7 @@
 
 ;;; Commands
 
+;;;###autoload
 (defun magit-stgit-refresh ()
   "Refresh the contents of a patch in an StGit series.
 If there is no marked patch in the series, refreshes the current
@@ -257,6 +258,7 @@ patch.  Otherwise, refreshes the marked patch."
       (magit-run-stgit "refresh" "-p" magit-stgit--marked-patch)
     (magit-run-stgit "refresh")))
 
+;;;###autoload
 (defun magit-stgit-repair ()
   "Repair StGit metadata if branch was modified with git commands.
 In the case of Git commits these will be imported as new patches
@@ -266,6 +268,7 @@ into the series."
   (magit-run-stgit "repair")
   (message ""))
 
+;;;###autoload
 (defun magit-stgit-rebase ()
   "Rebase an StGit patch series."
   (interactive)
@@ -284,8 +287,8 @@ into the series."
   (or (derived-mode-p 'magit-mode)
       (error "This mode only makes sense with magit"))
   (if magit-stgit-mode
-      (add-hook  'magit-after-insert-stashes-hook 'magit-insert-series nil t)
-    (remove-hook 'magit-after-insert-stashes-hook 'magit-insert-series t))
+      (add-hook  'magit-after-insert-stashes-hook 'magit-insert-stgit-series nil t)
+    (remove-hook 'magit-after-insert-stashes-hook 'magit-insert-stgit-series t))
   (when (called-interactively-p 'any)
     (magit-refresh)))
 

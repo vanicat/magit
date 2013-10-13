@@ -46,6 +46,7 @@
 
 ;; git svn commands
 
+;;;###autoload (autoload 'magit-svn-find-rev "magit")
 (magit-define-command svn-find-rev (rev &optional branch)
   "Find commit for svn REVISION in BRANCH."
   (interactive
@@ -64,28 +65,33 @@
            sha))
       (error "Revision %s could not be mapped to a commit" rev))))
 
+;;;###autoload (autoload 'magit-svn-create-branch "magit")
 (magit-define-command svn-create-branch (name)
   "Create svn branch NAME."
   (interactive "sBranch name: ")
   (apply 'magit-run-git "svn" "branch"
          (append magit-custom-options (list name))))
 
+;;;###autoload (autoload 'magit-svn-create-tag "magit")
 (magit-define-command svn-create-tag (name)
   "Create svn tag NAME."
   (interactive "sTag name: ")
   (apply 'magit-run-git "svn" "tag"
          (append magit-custom-options (list name))))
 
+;;;###autoload (autoload 'magit-svn-rebase "magit")
 (magit-define-command svn-rebase ()
   "Run git-svn rebase."
   (interactive)
   (apply 'magit-run-git-async "svn" "rebase" magit-custom-options))
 
+;;;###autoload (autoload 'magit-svn-dcommit "magit")
 (magit-define-command svn-dcommit ()
   "Run git-svn dcommit."
   (interactive)
   (apply 'magit-run-git-async "svn" "dcommit" magit-custom-options))
 
+;;;###autoload (autoload 'magit-svn-remote-update "magit")
 (magit-define-command svn-remote-update ()
   "Run git-svn fetch."
   (interactive)
@@ -158,9 +164,8 @@ If USE-CACHE is non-nil then return the value of
                  ;; the way that git-svn does it.
                  (cons 'local-ref
                        (with-temp-buffer
-                         (insert (or (magit-git-string "log" "--first-parent"
-                                                       "--grep" "git-svn" "-1")
-                                     ""))
+                         (magit-git-insert "log" "-1" "--first-parent"
+                                           "--grep" "git-svn")
                          (goto-char (point-min))
                          (cond ((re-search-forward
                                  "git-svn-id: \\(.+/.+?\\)@\\([0-9]+\\)" nil t)
@@ -182,7 +187,7 @@ If USE-CACHE is non nil, use the cached information."
 (magit-define-inserter svn-unpulled ()
   (when (magit-svn-enabled)
     (magit-git-section 'svn-unpulled "Unpulled commits (SVN):"
-                       #'magit-wash-log
+                       (apply-partially 'magit-wash-log 'unique)
                        "log" magit-log-format
                        (magit-diff-abbrev-arg)
                        (format "HEAD..%s" (magit-svn-get-ref t)))))
@@ -190,14 +195,14 @@ If USE-CACHE is non nil, use the cached information."
 (magit-define-inserter svn-unpushed ()
   (when (magit-svn-enabled)
     (magit-git-section 'svn-unpushed "Unpushed commits (SVN):"
-                       #'magit-wash-log
+                       (apply-partially 'magit-wash-log 'unique)
                        "log" magit-log-format
                        (magit-diff-abbrev-arg)
                        (format "%s..HEAD" (magit-svn-get-ref t)))))
 
 (magit-define-section-jumper svn-unpushed  "Unpushed commits (SVN)")
 
-(defun magit-svn-insert-status-remote-line ()
+(defun magit-insert-svn-remote-line ()
   (let ((svn-info (magit-svn-get-ref-info)))
     (when svn-info
       (magit-insert-status-line "Remote"
@@ -205,6 +210,7 @@ If USE-CACHE is non nil, use the cached information."
                 " @ "
                 (cdr (assoc 'revision svn-info)))))))
 
+;;;###autoload
 (defun magit-svn-fetch-externals()
   "Loops through all external repos found by `magit-svn-external-directories'
    and runs git svn fetch, and git svn rebase on each of them."
@@ -272,15 +278,15 @@ If USE-CACHE is non nil, use the cached information."
                    'magit-insert-svn-unpulled nil t)
          (add-hook 'magit-after-insert-unpushed-commits-hook
                    'magit-insert-svn-unpushed nil t)
-         (add-hook 'magit-after-insert-remote-line-hook
-                   'magit-svn-insert-status-remote-line nil t))
+         (add-hook 'magit-after-insert-status-remote-line-hook
+                   'magit-insert-svn-remote-line nil t))
         (t
          (remove-hook 'magit-after-insert-unpulled-commits-hook
                       'magit-insert-svn-unpulled t)
          (remove-hook 'magit-after-insert-unpushed-commits-hook
                       'magit-insert-svn-unpushed t)
-         (remove-hook 'magit-after-insert-remote-line-hook
-                      'magit-svn-insert-status-remote-line t)))
+         (remove-hook 'magit-after-insert-status-remote-line-hook
+                      'magit-insert-svn-remote-line t)))
   (when (called-interactively-p 'any)
     (magit-refresh)))
 
