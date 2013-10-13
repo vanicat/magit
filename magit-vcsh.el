@@ -86,6 +86,9 @@ Return it in a form switable to append to `process-environment'"
        ad-do-it)))
 
 (magit-vcsh-advice-macro magit-cmd-output)
+(magit-vcsh-advice-macro magit-cmd-insert)
+(magit-vcsh-advice-macro magit-git-string)
+(magit-vcsh-advice-macro magit-git-lines)
 (magit-vcsh-advice-macro magit-git-exit-code)
 (magit-vcsh-advice-macro magit-run*)
 (magit-vcsh-advice-macro magit-start-process)
