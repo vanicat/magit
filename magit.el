@@ -150,7 +150,34 @@ buffer-local wherever it is set."
       (declare (debug defvar) (doc-string 3))
       (list 'progn (list 'defvar var val docstring)
             (list 'make-variable-buffer-local (list 'quote var)))))
+
+  (unless (fboundp 'run-hook-wrapped)
+
+    (defun run-hook-wrapped  (hook wrap-function &rest args)
+      "Run HOOK, passing each function through WRAP-FUNCTION.
+I.e. instead of calling each function FUN directly with arguments ARGS,
+it calls WRAP-FUNCTION with arguments FUN and ARGS.
+As soon as a call to WRAP-FUNCTION returns non-nil, `run-hook-wrapped'
+aborts and returns that value."
+      (when (boundp hook)
+        (let ((functions (symbol-value hook))
+              (global ())
+              (ret ()))
+          (while (and functions
+                      (null ret))
+            (if (and (eq (car functions) t)
+                     (local-variable-p hook)
+                     (default-boundp hook))
+                (setq global t)
+              (setq ret (apply wrap-function (car functions) args)))
+            (setq (function (cdr functions)))
+            (when (and global (null functions))
+              (setq global ())
+              (setq functions (default-value hook))))
+          ret))))
   )
+
+
 
 
 ;;; Settings
