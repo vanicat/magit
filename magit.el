@@ -153,28 +153,28 @@ buffer-local wherever it is set."
 
   (unless (fboundp 'run-hook-wrapped)
 
-    (defun run-hook-wrapped  (hook wrap-function &rest args)
+    (defun run-hook-wrapped-1 (hook funcs wrap-function &rest args)
+      (loop for f in funcs
+         if (and (eq f t)
+                 (local-variable-p hook)
+                 (default-boundp hook)
+                 (apply 'run-hook-wrapped-1
+                        nil (default-value hook) wrap-function args))
+         return it
+         else
+         if (and (functionp f) (apply wrap-function f args))
+         return it))
+    (defun run-hook-wrapped (hook wrap-function &rest args)
       "Run HOOK, passing each function through WRAP-FUNCTION.
 I.e. instead of calling each function FUN directly with arguments ARGS,
 it calls WRAP-FUNCTION with arguments FUN and ARGS.
 As soon as a call to WRAP-FUNCTION returns non-nil, `run-hook-wrapped'
 aborts and returns that value."
       (when (boundp hook)
-        (let ((functions (symbol-value hook))
-              (global ())
-              (ret ()))
-          (while (and functions
-                      (null ret))
-            (if (and (eq (car functions) t)
-                     (local-variable-p hook)
-                     (default-boundp hook))
-                (setq global t)
-              (setq ret (apply wrap-function (car functions) args)))
-            (setq (function (cdr functions)))
-            (when (and global (null functions))
-              (setq global ())
-              (setq functions (default-value hook))))
-          ret))))
+        (let ((functions (symbol-value hook)))
+          (if (functionp functions)
+              (apply 'run-hook-wrapped-1 hook (list functions) wrap-function args)
+              (apply 'run-hook-wrapped-1 hook functions wrap-function args))))))
   )
 
 
